@@ -6,6 +6,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Order } from './order.entity';
+import { Product } from 'src/product/entities/product.entity';
 
 @Entity({ name: 'order_items' })
 export class OrderItem {
@@ -18,11 +19,9 @@ export class OrderItem {
   @JoinColumn({ name: 'order_id' })
   order!: Order;
 
-  @Column({ type: 'uuid' })
-  product_id!: string;
-
-  @Column({ type: 'varchar', length: 255 })
-  product_name!: string;
+  @ManyToOne(() => Product, (product) => product.orderItems)
+  @JoinColumn({ name: 'product_id' })
+  product!: Product;
 
   @Column({
     type: 'decimal',

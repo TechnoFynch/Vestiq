@@ -12,10 +12,11 @@ import {
 } from 'typeorm';
 import { ProductImage } from './product_image.entity';
 import { CartItem } from 'src/cart/entities/cart_item.entity';
+import { OrderItem } from 'src/order/entities/order-item.entity';
 
 @Entity()
 export class Product {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn('uuid')
   id!: string;
 
   @Column({
@@ -47,6 +48,7 @@ export class Product {
     type: 'decimal',
     scale: 2,
     precision: 10,
+    nullable: true,
   })
   sale_price?: number;
 
@@ -66,6 +68,9 @@ export class Product {
 
   @OneToMany(() => CartItem, (cartItem) => cartItem.product)
   cart_items?: CartItem[];
+
+  @OneToMany(() => OrderItem, (orderItem) => orderItem.product)
+  orderItems?: OrderItem[];
 
   @CreateDateColumn()
   created_at!: Date;

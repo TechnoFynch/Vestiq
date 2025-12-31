@@ -23,6 +23,7 @@ export class Auth {
     type: 'varchar',
     nullable: false,
     length: 125,
+    unique: true,
   })
   email!: string;
 
@@ -39,12 +40,6 @@ export class Auth {
     default: UserTypeEnum.USER,
   })
   role!: UserTypeEnum;
-
-  @Column({
-    type: 'boolean',
-    default: true,
-  })
-  is_active!: boolean;
 
   @OneToOne(() => UserProfile, (profile) => profile.user)
   @JoinColumn()

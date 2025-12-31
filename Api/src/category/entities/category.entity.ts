@@ -4,6 +4,8 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -27,12 +29,18 @@ export class Category {
   })
   slug!: string;
 
-  @Column({
-    type: 'varchar',
-    length: 1024,
+  @ManyToOne(() => Category, (category) => category.children, {
     nullable: true,
+    onDelete: 'SET NULL',
   })
-  parent_id?: string;
+  @JoinColumn({ name: 'parent_id' })
+  parent?: Category;
+
+  /**
+   * Child categories (One parent → Many children)
+   */
+  @OneToMany(() => Category, (category) => category.parent)
+  children?: Category[];
 
   @OneToMany(() => Product, (products) => products.category)
   products?: Product[];
