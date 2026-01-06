@@ -3,6 +3,7 @@ import {
   Injectable,
   InternalServerErrorException,
   Logger,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
@@ -13,6 +14,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UserProfileService } from 'src/user_profile/user_profile.service';
 import * as bcrypt from 'bcrypt';
 import UserTypeEnum from './enums/user-type.enum';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
@@ -20,6 +22,7 @@ export class AuthService {
     @InjectRepository(Auth)
     private readonly AuthRepo: Repository<Auth>,
     private readonly userProfileService: UserProfileService,
+    private readonly jwtService: JwtService,
   ) {}
 
   private readonly logger = new Logger(AuthService.name);
@@ -68,6 +71,48 @@ export class AuthService {
 
       // 🔥 Bcrypt / unexpected errors
       throw new InternalServerErrorException('Failed to create user');
+    }
+  }
+
+  public async login(createAuthDto: CreateAuthDto) {
+    const user = await this.findByEmail(createAuthDto.email);
+
+    if (!user) {
+      throw new UnauthorizedException();
+    }
+
+    const isMatch = await bcrypt.compare(
+      createAuthDto.password,
+      user.password_hash,
+    );
+
+    if (!isMatch) {
+      throw new UnauthorizedException();
+    }
+
+    const payload = {
+      sub: user.id,
+      role: user.role,
+      email: user.email,
+      name: `${user.profile.firstName} ${user.profile.lastName}`,
+    };
+
+    return { accessToken: this.jwtService.sign(payload) };
+  }
+
+  async findByEmail(email: string) {
+    try {
+      const user = await this.AuthRepo.findOne({
+        where: { email },
+        relations: ['profile'],
+      });
+
+      return user;
+    } catch (error) {
+      this.logger.error(error);
+
+      // 🔥 Bcrypt / unexpected errors
+      throw new InternalServerErrorException('Something went wrong.');
     }
   }
 

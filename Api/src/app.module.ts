@@ -34,6 +34,12 @@ import { OrderModule } from './order/order.module';
         DB_NAME: Joi.string().required(),
 
         SYNCHRONIZE: Joi.boolean().default(false),
+
+        JWT_SECRET: Joi.string().required(),
+        JWT_EXPIRY: Joi.string().required(),
+        CLOUDINARY_APIKEY: Joi.string().required(),
+        CLOUDINARY_SECRET: Joi.string().required(),
+        CLOUDINARY_CLOUD_NAME: Joi.string().required(),
       }),
     }),
 

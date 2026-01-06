@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import {
   IsNumber,
   IsOptional,
@@ -7,7 +8,9 @@ import {
   MaxLength,
   Min,
   Matches,
+  IsInt,
 } from 'class-validator';
+import { Category } from 'src/category/entities/category.entity';
 
 export class CreateProductDto {
   @ApiProperty({
@@ -45,16 +48,16 @@ export class CreateProductDto {
   })
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
+  @Type(() => Number)
   price!: number;
 
   @ApiPropertyOptional({
     description: 'Discounted sale price',
     example: 74999.99,
-    minimum: 0,
   })
   @IsOptional()
   @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0)
+  @Type(() => Number)
   sale_price?: number;
 
   @ApiProperty({
@@ -72,4 +75,15 @@ export class CreateProductDto {
   })
   @IsUUID()
   categoryId!: string;
+
+  @ApiPropertyOptional({
+    description: 'Available quantity of the product',
+    example: 100,
+    minimum: 0,
+    default: 0,
+  })
+  @IsOptional()
+  @IsInt()
+  @Type(() => Number)
+  quantity?: number;
 }

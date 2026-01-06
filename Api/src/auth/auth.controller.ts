@@ -6,25 +6,34 @@ import {
   Patch,
   Param,
   Delete,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import { CreateUserProfileDto } from 'src/user_profile/dto/create-user_profile.dto';
 import { ApiBody } from '@nestjs/swagger';
-import { RegisterRequestDto } from 'src/documentation/register-wrapper.swagger.dto';
+import { RegisterWrapperDto } from 'src/documentation/register-wrapper.swagger.dto';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
-  @ApiBody({ type: RegisterRequestDto })
+  @ApiBody({ type: RegisterWrapperDto })
   create(
     @Body('user') createAuthDto: CreateAuthDto,
     @Body('user_profile') createUserProfileDto: CreateUserProfileDto,
   ) {
     return this.authService.create(createAuthDto, createUserProfileDto);
+  }
+
+  @Post('login')
+  @HttpCode(HttpStatus.OK)
+  @ApiBody({ type: CreateAuthDto })
+  login(@Body() createAuthDto: CreateAuthDto) {
+    return this.authService.login(createAuthDto);
   }
 
   @Get()

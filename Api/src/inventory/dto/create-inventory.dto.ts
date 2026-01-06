@@ -19,15 +19,4 @@ export class CreateInventoryDto {
   @IsInt()
   @Min(0)
   quantity?: number;
-
-  @ApiPropertyOptional({
-    description: 'Reserved quantity (items in carts / pending orders)',
-    example: 10,
-    minimum: 0,
-    default: 0,
-  })
-  @IsOptional()
-  @IsInt()
-  @Min(0)
-  reserved?: number;
 }

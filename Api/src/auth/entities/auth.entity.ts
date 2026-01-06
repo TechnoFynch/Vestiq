@@ -42,7 +42,6 @@ export class Auth {
   role!: UserTypeEnum;
 
   @OneToOne(() => UserProfile, (profile) => profile.user)
-  @JoinColumn()
   profile!: UserProfile;
 
   @OneToMany(() => Address, (address) => address.user)
