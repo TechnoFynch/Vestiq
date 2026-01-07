@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { ProductService } from './product.service';
-import { ProductController } from './product.controller';
+import { ProductAdminService } from './product-admin.service';
+import { ProductAdminController } from './product-admin.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Product } from './entities/product.entity';
 import { ProductImage } from './entities/product_image.entity';
@@ -9,8 +9,8 @@ import { InventoryModule } from 'src/inventory/inventory.module';
 import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  controllers: [ProductController],
-  providers: [ProductService, ProductImageService],
+  controllers: [ProductAdminController],
+  providers: [ProductAdminService, ProductImageService],
   imports: [
     TypeOrmModule.forFeature([Product, ProductImage]),
     InventoryModule,

@@ -9,8 +9,9 @@ import {
   UseGuards,
   UseInterceptors,
   UploadedFiles,
+  Query,
 } from '@nestjs/common';
-import { ProductService } from './product.service';
+import { ProductAdminService } from './product-admin.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { ApiBearerAuth, ApiBody, ApiConsumes } from '@nestjs/swagger';
@@ -19,15 +20,15 @@ import { AdminGuard } from 'src/guards/admin.guard';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { FileSizeValidationPipe } from './pipes/file-size-validator.pipe';
 import { FileTypeValidationPipe } from './pipes/file-type-validator.pipe';
-import { CreateInventoryDto } from 'src/inventory/dto/create-inventory.dto';
+import { PaginationQueryDto } from 'src/global-dtos/pagination-query.dto';
 
 @Controller('product')
-export class ProductController {
-  constructor(private readonly productService: ProductService) {}
+@ApiBearerAuth('access-token')
+@UseGuards(JwtAuthGuard, AdminGuard)
+export class ProductAdminController {
+  constructor(private readonly productService: ProductAdminService) {}
 
   @Post()
-  @ApiBearerAuth('access-token')
-  @UseGuards(JwtAuthGuard, AdminGuard)
   @UseInterceptors(FilesInterceptor('images', 5))
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -87,22 +88,22 @@ export class ProductController {
   }
 
   @Get()
-  findAll() {
-    return this.productService.findAll();
+  findAll(@Query() pagination: PaginationQueryDto) {
+    return this.productService.findAll(pagination);
   }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.productService.findOne(+id);
+    return this.productService.findOne(id);
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
-    return this.productService.update(+id, updateProductDto);
+    return this.productService.update(id, updateProductDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.productService.remove(+id);
+    return this.productService.remove(id);
   }
 }

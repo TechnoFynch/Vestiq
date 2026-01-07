@@ -49,7 +49,7 @@ export class InventoryService {
     return `This action returns a #${id} inventory`;
   }
 
-  update(id: number, updateInventoryDto: UpdateInventoryDto) {
+  update(id: string, updateInventoryDto: UpdateInventoryDto) {
     return `This action updates a #${id} inventory`;
   }
 

@@ -3,6 +3,7 @@ import {
   Injectable,
   InternalServerErrorException,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -16,10 +17,12 @@ import { v2 as cloudinary, UploadApiResponse } from 'cloudinary';
 import { Readable } from 'stream';
 import { cloudinaryAccessType } from 'src/config/configuration';
 import { Inventory } from 'src/inventory/entities/inventory.entity';
+import { PaginationQueryDto } from 'src/global-dtos/pagination-query.dto';
+import { Category } from 'src/category/entities/category.entity';
 
 @Injectable()
-export class ProductService {
-  private readonly logger = new Logger(ProductService.name);
+export class ProductAdminService {
+  private readonly logger = new Logger(ProductAdminService.name);
 
   constructor(
     @InjectRepository(Product)
@@ -152,19 +155,158 @@ export class ProductService {
     });
   }
 
-  findAll() {
-    return `This action returns all product`;
+  async findAll(pagination: PaginationQueryDto) {
+    try {
+      const page = pagination?.page ?? 1;
+      const limit = pagination?.limit ?? 10;
+
+      const [products, total] = await this.productRepo.findAndCount({
+        relations: ['inventory', 'category'],
+        select: {
+          id: true,
+          created_at: true,
+          updated_at: true,
+          category: {
+            name: true,
+            slug: true,
+          },
+          inventory: {
+            quantity: true,
+          },
+          name: true,
+          slug: true,
+          description: true,
+          price: true,
+          sale_price: true,
+          sku: true,
+        },
+        take: limit,
+        skip: (page - 1) * limit,
+      });
+
+      return {
+        data: products,
+        total: total,
+        limit: limit,
+        offset: page,
+      };
+    } catch (error) {
+      this.logger.error(error);
+
+      throw new InternalServerErrorException('Something went wrong!');
+    }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} product`;
+  async findOne(id: string) {
+    try {
+      const product = await this.productRepo.findOneOrFail({
+        where: { id: id },
+        relations: ['inventory', 'category', 'images'],
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          description: true,
+          price: true,
+          sale_price: true,
+          sku: true,
+          created_at: true,
+          updated_at: true,
+          deleted_at: true,
+          category: {
+            id: true,
+            slug: true,
+            name: true,
+          },
+          inventory: {
+            quantity: true,
+          },
+          images: {
+            id: true,
+            is_primary: true,
+            url: true,
+          },
+        },
+      });
+
+      return {
+        data: product,
+      };
+    } catch (error) {
+      this.logger.error(error);
+
+      throw new InternalServerErrorException('Something went wrong!');
+    }
   }
 
-  update(id: number, updateProductDto: UpdateProductDto) {
-    return `This action updates a #${id} product`;
+  async update(id: string, updateProductDto: UpdateProductDto) {
+    try {
+      // 1️⃣ Find product
+      const product = await this.productRepo.findOne({
+        where: { id },
+        relations: ['category', 'inventory'],
+      });
+
+      if (!product) {
+        throw new NotFoundException('Product not found');
+      }
+
+      // 2️⃣ Handle category update (categoryId → relation)
+      if (updateProductDto.categoryId) {
+        product.category = {
+          id: updateProductDto.categoryId,
+        } as Category; // intentional partial reference
+      }
+
+      if (updateProductDto.quantity) {
+        this.inventoryService.update(product.inventory.id, {
+          quantity: updateProductDto.quantity,
+        });
+      }
+
+      // 3️⃣ Explicitly ignore quantity (inventory handled elsewhere)
+      const {
+        quantity, // 👈 ignored on purpose
+        categoryId, // 👈 already handled
+        ...updatableFields
+      } = updateProductDto;
+
+      // 4️⃣ Apply remaining scalar fields safely
+      Object.assign(product, updatableFields);
+
+      await this.productRepo.save(product);
+
+      return {
+        success: true,
+        message: 'Product updated successfully',
+      };
+    } catch (error) {
+      this.logger.error(error);
+
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException('Failed to update product');
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} product`;
+  async remove(id: string) {
+    try {
+      const product = await this.productRepo.findOneByOrFail({ id: id });
+
+      await this.productRepo.softDelete({ id: product.id });
+
+      this.logger.log(`Product ${product.id} marked as not available`);
+
+      return {
+        success: true,
+        message: `Product ${product.name} deleted`,
+      };
+    } catch (error) {
+      this.logger.error(error);
+
+      throw new InternalServerErrorException('Something went wrong');
+    }
   }
 }

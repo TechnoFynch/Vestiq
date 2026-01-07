@@ -7,12 +7,14 @@ import {
   JoinColumn,
   ManyToOne,
   OneToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { ProductImage } from './product_image.entity';
 import { CartItem } from 'src/cart/entities/cart_item.entity';
 import { OrderItem } from 'src/order/entities/order-item.entity';
+import { Inventory } from 'src/inventory/entities/inventory.entity';
 
 @Entity()
 export class Product {
@@ -62,6 +64,9 @@ export class Product {
   @ManyToOne(() => Category, (category) => category.products)
   @JoinColumn({ name: 'category_id' })
   category!: Category;
+
+  @OneToOne(() => Inventory, (inventory) => inventory.product)
+  inventory!: Inventory;
 
   @OneToMany(() => ProductImage, (productImage) => productImage.product)
   images?: ProductImage[];

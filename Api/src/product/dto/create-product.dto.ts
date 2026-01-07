@@ -10,7 +10,6 @@ import {
   Matches,
   IsInt,
 } from 'class-validator';
-import { Category } from 'src/category/entities/category.entity';
 
 export class CreateProductDto {
   @ApiProperty({
