@@ -7,10 +7,12 @@ import { ProductImage } from './entities/product_image.entity';
 import { ProductImageService } from './product-image.service';
 import { InventoryModule } from 'src/inventory/inventory.module';
 import { ConfigModule } from '@nestjs/config';
+import { ProductController } from './product.controller';
+import { ProductService } from './product.service';
 
 @Module({
-  controllers: [ProductAdminController],
-  providers: [ProductAdminService, ProductImageService],
+  controllers: [ProductAdminController, ProductController],
+  providers: [ProductAdminService, ProductImageService, ProductService],
   imports: [
     TypeOrmModule.forFeature([Product, ProductImage]),
     InventoryModule,

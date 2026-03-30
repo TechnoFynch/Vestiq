@@ -6,7 +6,7 @@ export default () => ({
     port: parseInt(process.env.DB_PORT ?? '5432', 10), // ✅ Postgres
     username: process.env.DB_USER ?? 'postgres',
     password: process.env.DB_PASSWORD ?? '',
-    database: process.env.DB_NAME ?? '',
+    database: process.env.DB_NAME ?? 'Vestiq',
   },
   secret: process.env.JWT_SECRET,
   expiry: process.env.JWT_EXPIRY,

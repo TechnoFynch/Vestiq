@@ -45,7 +45,6 @@ export class AuthService {
 
       this.logger.log(`New User created with ID: ${authUser.id}`);
 
-      // TODO: Continue with profile creation (later)
       const userProfileResponse = await this.userProfileService.create(
         createUserProfileDto,
         authUser.id,

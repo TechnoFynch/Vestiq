@@ -3,7 +3,6 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
-  JoinColumn,
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
@@ -13,6 +12,7 @@ import UserTypeEnum from '../enums/user-type.enum';
 import { UserProfile } from 'src/user_profile/entities/user_profile.entity';
 import { Address } from 'src/address/entities/address.entity';
 import { Order } from 'src/order/entities/order.entity';
+import { ProductRating } from 'src/product-rating/entities/product-rating.entity';
 
 @Entity('users')
 export class Auth {
@@ -49,6 +49,9 @@ export class Auth {
 
   @OneToMany(() => Order, (order) => order.user)
   orders?: Order[];
+
+  @OneToMany(() => ProductRating, (rating) => rating.user)
+  product_ratings?: ProductRating[];
 
   @UpdateDateColumn()
   updated_at!: Date;

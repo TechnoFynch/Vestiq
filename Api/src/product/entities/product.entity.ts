@@ -15,6 +15,7 @@ import { ProductImage } from './product_image.entity';
 import { CartItem } from 'src/cart/entities/cart_item.entity';
 import { OrderItem } from 'src/order/entities/order-item.entity';
 import { Inventory } from 'src/inventory/entities/inventory.entity';
+import { ProductRating } from 'src/product-rating/entities/product-rating.entity';
 
 @Entity()
 export class Product {
@@ -76,6 +77,9 @@ export class Product {
 
   @OneToMany(() => OrderItem, (orderItem) => orderItem.product)
   orderItems?: OrderItem[];
+
+  @ManyToOne(() => ProductRating, (rating) => rating.product)
+  product_rating?: ProductRating[];
 
   @CreateDateColumn()
   created_at!: Date;

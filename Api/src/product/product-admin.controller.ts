@@ -22,7 +22,7 @@ import { FileSizeValidationPipe } from './pipes/file-size-validator.pipe';
 import { FileTypeValidationPipe } from './pipes/file-type-validator.pipe';
 import { PaginationQueryDto } from 'src/global-dtos/pagination-query.dto';
 
-@Controller('product')
+@Controller('admin/product')
 @ApiBearerAuth('access-token')
 @UseGuards(JwtAuthGuard, AdminGuard)
 export class ProductAdminController {

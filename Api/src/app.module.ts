@@ -13,6 +13,7 @@ import { InventoryModule } from './inventory/inventory.module';
 import { CartModule } from './cart/cart.module';
 import { AddressModule } from './address/address.module';
 import { OrderModule } from './order/order.module';
+import { ProductRatingModule } from './product-rating/product-rating.module';
 
 @Module({
   imports: [
@@ -77,6 +78,8 @@ import { OrderModule } from './order/order.module';
     AddressModule,
 
     OrderModule,
+
+    ProductRatingModule,
   ],
 })
 export class AppModule {}
