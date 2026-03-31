@@ -45,7 +45,7 @@ export class Auth {
   profile!: UserProfile;
 
   @OneToMany(() => Address, (address) => address.user)
-  addresses?: Address;
+  addresses?: Address[];
 
   @OneToMany(() => Order, (order) => order.user)
   orders?: Order[];

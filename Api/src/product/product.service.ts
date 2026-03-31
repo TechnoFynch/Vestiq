@@ -166,6 +166,71 @@ export class ProductService {
   }
 
   public async suggestProducts(query: string) {
-    return 'searching';
+    try {
+      const ratingSubquery = this.productRepo
+        .createQueryBuilder('product')
+        .subQuery()
+        .select('pr.productId', 'productId')
+        .addSelect('ROUND(AVG(pr.rating), 2)', 'avgRating')
+        .from('product_rating', 'pr')
+        .groupBy('pr."productId"');
+
+      const queryBuilder = this.productRepo
+        .createQueryBuilder('product')
+        .innerJoin('product.category', 'category')
+        .leftJoin(
+          '(' + ratingSubquery.getQuery() + ')',
+          'rating',
+          'rating."productId" = product.id',
+        )
+        .select([
+          'product.id',
+          'product.slug',
+          'product.name',
+          'product.price',
+          'category.name',
+        ])
+        .addSelect('COALESCE(rating."avgRating", 0)', 'avgRating')
+        .orderBy('COALESCE(rating."avgRating", 0)', 'DESC')
+        .addOrderBy('product.name', 'ASC')
+        .limit(3);
+
+      if (query) {
+        queryBuilder.andWhere(
+          new Brackets((qb) => {
+            qb.where('product.name ILIKE :search')
+              .orWhere('category.name ILIKE :search')
+              .orWhere('product.description ILIKE :search');
+          }),
+          { search: `%${query}%` },
+        );
+      }
+
+      interface SuggestionResult {
+        product_id: string;
+        product_slug: string;
+        product_name: string;
+        product_price: number;
+        category_name: string;
+        avgRating: string;
+      }
+
+      const suggestions = await queryBuilder.getRawMany();
+
+      return suggestions.map((product: SuggestionResult) => ({
+        id: product.product_id,
+        slug: product.product_slug,
+        name: product.product_name,
+        category: product.category_name,
+        price: product.product_price,
+        averageRating: parseFloat(product.avgRating),
+      }));
+    } catch (error) {
+      console.log(error);
+      this.logger.error('Error in suggestProducts:', error);
+      throw new InternalServerErrorException(
+        'Failed to fetch product suggestions',
+      );
+    }
   }
 }

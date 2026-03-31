@@ -78,7 +78,7 @@ export class Product {
   @OneToMany(() => OrderItem, (orderItem) => orderItem.product)
   orderItems?: OrderItem[];
 
-  @ManyToOne(() => ProductRating, (rating) => rating.product)
+  @OneToMany(() => ProductRating, (rating) => rating.product)
   product_rating?: ProductRating[];
 
   @CreateDateColumn()

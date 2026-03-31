@@ -30,5 +30,5 @@ export class Inventory {
   reserved!: number;
 
   @UpdateDateColumn()
-  updated_at!: number;
+  updated_at!: Date;
 }
