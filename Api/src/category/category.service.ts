@@ -1,5 +1,6 @@
 import {
   Injectable,
+  NotFoundException,
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
@@ -18,30 +19,111 @@ export class CategoryService {
     private readonly categoryRepo: Repository<Category>,
   ) {}
 
-  create(createCategoryDto: CreateCategoryDto) {
-    return 'This action adds a new category';
-  }
-
-  findAll() {
-    return `This action returns all category`;
-  }
-
-  async findOne(id: number) {
+  async create(createCategoryDto: CreateCategoryDto) {
     try {
-      // const category =
+      const category = this.categoryRepo.create(createCategoryDto);
+      const savedCategory = await this.categoryRepo.save(category);
+
+      this.logger.log(`Category created with ID: ${savedCategory.id}`);
+      return savedCategory;
     } catch (error) {
-      this.logger.error(error);
-
-      throw new InternalServerErrorException('Something went wrong!');
+      this.logger.error('Error creating category:', error);
+      throw new InternalServerErrorException('Failed to create category');
     }
-    return `This action returns a #${id} category`;
   }
 
-  update(id: number, updateCategoryDto: UpdateCategoryDto) {
-    return `This action updates a #${id} category`;
+  async findAll() {
+    try {
+      const categories = await this.categoryRepo.find({
+        relations: ['parent', 'children'],
+        order: {
+          name: 'ASC',
+        },
+      });
+
+      return categories;
+    } catch (error) {
+      this.logger.error('Error fetching categories:', error);
+      throw new InternalServerErrorException('Failed to fetch categories');
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} category`;
+  async findOne(id: string) {
+    try {
+      const category = await this.categoryRepo.findOne({
+        where: { id },
+        relations: ['parent', 'children', 'products'],
+      });
+
+      if (!category) {
+        throw new NotFoundException(`Category with ID ${id} not found`);
+      }
+
+      return category;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      this.logger.error(`Error fetching category with ID ${id}:`, error);
+      throw new InternalServerErrorException('Failed to fetch category');
+    }
+  }
+
+  async update(id: string, updateCategoryDto: UpdateCategoryDto) {
+    try {
+      const category = await this.categoryRepo.findOne({
+        where: { id },
+      });
+
+      if (!category) {
+        throw new NotFoundException(`Category with ID ${id} not found`);
+      }
+
+      Object.assign(category, updateCategoryDto);
+      const updatedCategory = await this.categoryRepo.save(category);
+
+      this.logger.log(`Category updated with ID: ${id}`);
+      return updatedCategory;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      this.logger.error(`Error updating category with ID ${id}:`, error);
+      throw new InternalServerErrorException('Failed to update category');
+    }
+  }
+
+  async remove(id: string) {
+    try {
+      const category = await this.categoryRepo.findOne({
+        where: { id },
+        relations: ['children'],
+      });
+
+      if (!category) {
+        throw new NotFoundException(`Category with ID ${id} not found`);
+      }
+
+      // Check if category has children
+      if (category.children && category.children.length > 0) {
+        throw new InternalServerErrorException(
+          'Cannot delete category with child categories. Please delete or move child categories first.',
+        );
+      }
+
+      await this.categoryRepo.softDelete(id);
+
+      this.logger.log(`Category soft deleted with ID: ${id}`);
+      return { message: `Category with ID ${id} has been deleted` };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      this.logger.error(`Error deleting category with ID ${id}:`, error);
+      throw new InternalServerErrorException('Failed to delete category');
+    }
   }
 }
