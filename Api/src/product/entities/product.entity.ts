@@ -12,7 +12,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { ProductImage } from './product_image.entity';
-import { CartItem } from 'src/cart/entities/cart_item.entity';
+import { CartItem } from 'src/cart/entities/cart-item.entity';
 import { OrderItem } from 'src/order/entities/order-item.entity';
 import { Inventory } from 'src/inventory/entities/inventory.entity';
 import { ProductRating } from 'src/product-rating/entities/product-rating.entity';

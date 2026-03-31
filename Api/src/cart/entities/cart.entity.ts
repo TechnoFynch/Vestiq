@@ -8,7 +8,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { CartItem } from './cart_item.entity';
+import { CartItem } from './cart-item.entity';
 
 @Entity()
 export class Cart {

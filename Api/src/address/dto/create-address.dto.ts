@@ -1,7 +1,20 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsOptional, IsString, Length } from 'class-validator';
+import {
+  IsBoolean,
+  IsOptional,
+  IsString,
+  Length,
+  IsUUID,
+} from 'class-validator';
 
 export class CreateAddressDto {
+  @ApiProperty({
+    description: 'User ID for whom the address is being created',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @IsUUID()
+  userId!: string;
+
   @ApiProperty({
     example: 'Shubham Salunke',
     description: 'Full name of the recipient',

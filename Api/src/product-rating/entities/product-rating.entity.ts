@@ -1,6 +1,12 @@
 import { Auth } from 'src/auth/entities/auth.entity';
 import { Product } from 'src/product/entities/product.entity';
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Check,
+  Column,
+  Entity,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 @Entity()
 export class ProductRating {
@@ -19,6 +25,7 @@ export class ProductRating {
     precision: 2,
     scale: 1,
   })
+  @Check('"rating" >= 1 AND "rating" <= 5')
   rating!: number;
 
   @ManyToOne(() => Auth, (user) => user.product_ratings)
