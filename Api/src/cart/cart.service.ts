@@ -10,8 +10,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Cart } from './entities/cart.entity';
 import { CartItem } from './entities/cart-item.entity';
 import { Repository } from 'typeorm';
-import { Product } from 'src/product/entities/product.entity';
-import { Auth } from 'src/auth/entities/auth.entity';
+import { AuthService } from 'src/auth/auth.service';
+import { ProductService } from 'src/product/product.service';
+import { Inject, forwardRef } from '@nestjs/common';
+import type { Auth } from 'src/auth/entities/auth.entity';
 
 @Injectable()
 export class CartService {
@@ -22,8 +24,10 @@ export class CartService {
     private readonly cartRepo: Repository<Cart>,
     @InjectRepository(CartItem)
     private readonly cartItemRepo: Repository<CartItem>,
-    @InjectRepository(Product)
-    private readonly productRepo: Repository<Product>,
+    @Inject(forwardRef(() => ProductService))
+    private readonly productService: ProductService,
+    @Inject(forwardRef(() => AuthService))
+    private readonly authService: AuthService,
   ) {}
 
   async create(createCartDto: CreateCartDto) {
@@ -149,9 +153,7 @@ export class CartService {
       if (updateCartDto.items && updateCartDto.items.length > 0) {
         for (const itemDto of updateCartDto.items) {
           // Verify product exists and get current price
-          const product = await this.productRepo.findOne({
-            where: { id: itemDto.productId },
-          });
+          const product = await this.productService.findById(itemDto.productId);
 
           if (!product) {
             throw new NotFoundException(
@@ -218,9 +220,7 @@ export class CartService {
       }
 
       // Verify product exists and get current price
-      const product = await this.productRepo.findOne({
-        where: { id: itemDto.productId },
-      });
+      const product = await this.productService.findById(itemDto.productId);
 
       if (!product) {
         throw new NotFoundException(`Product ${itemDto.productId} not found`);

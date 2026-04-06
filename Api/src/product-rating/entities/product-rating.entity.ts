@@ -3,6 +3,7 @@ import { Product } from 'src/product/entities/product.entity';
 import {
   Check,
   Column,
+  CreateDateColumn,
   Entity,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -33,4 +34,7 @@ export class ProductRating {
 
   @ManyToOne(() => Product, (product) => product.product_rating)
   product!: Product;
+
+  @CreateDateColumn()
+  created_at!: Date;
 }

@@ -18,5 +18,6 @@ import { ProductService } from './product.service';
     InventoryModule,
     ConfigModule,
   ],
+  exports: [ProductService],
 })
 export class ProductModule {}

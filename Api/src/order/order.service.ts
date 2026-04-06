@@ -4,18 +4,20 @@ import {
   InternalServerErrorException,
   Logger,
   BadRequestException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
-import { CreateOrderDto, OrderItemDto } from './dto/create-order.dto';
+import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Order } from './entities/order.entity';
 import { OrderItem } from './entities/order-item.entity';
 import { Repository } from 'typeorm';
-import { Product } from 'src/product/entities/product.entity';
-import { Auth } from 'src/auth/entities/auth.entity';
-import { Address } from 'src/address/entities/address.entity';
 import { InventoryService } from 'src/inventory/inventory.service';
 import { CartService } from 'src/cart/cart.service';
+import { AuthService } from 'src/auth/auth.service';
+import { AddressService } from 'src/address/address.service';
+import { ProductService } from 'src/product/product.service';
 import { OrderStatus } from './enums/order-status.enum';
 
 @Injectable()
@@ -27,12 +29,12 @@ export class OrderService {
     private readonly orderRepo: Repository<Order>,
     @InjectRepository(OrderItem)
     private readonly orderItemRepo: Repository<OrderItem>,
-    @InjectRepository(Product)
-    private readonly productRepo: Repository<Product>,
-    @InjectRepository(Auth)
-    private readonly userRepo: Repository<Auth>,
-    @InjectRepository(Address)
-    private readonly addressRepo: Repository<Address>,
+    @Inject(forwardRef(() => AuthService))
+    private readonly authService: AuthService,
+    @Inject(forwardRef(() => AddressService))
+    private readonly addressService: AddressService,
+    @Inject(forwardRef(() => ProductService))
+    private readonly productService: ProductService,
     private readonly inventoryService: InventoryService,
     private readonly cartService: CartService,
   ) {}
@@ -40,21 +42,16 @@ export class OrderService {
   async create(createOrderDto: CreateOrderDto) {
     try {
       // Validate user exists
-      const user = await this.userRepo.findOne({
-        where: { id: createOrderDto.userId },
-      });
+      const user = await this.authService.findById(createOrderDto.userId);
 
       if (!user) {
         throw new NotFoundException(`User ${createOrderDto.userId} not found`);
       }
 
       // Validate address exists and belongs to user
-      const address = await this.addressRepo.findOne({
-        where: {
-          id: createOrderDto.addressId,
-          user: { id: createOrderDto.userId },
-        },
-      });
+      const address = await this.addressService.findById(
+        createOrderDto.addressId,
+      );
 
       if (!address) {
         throw new NotFoundException(
@@ -67,9 +64,7 @@ export class OrderService {
       const orderItems: OrderItem[] = [];
 
       for (const itemDto of createOrderDto.items) {
-        const product = await this.productRepo.findOne({
-          where: { id: itemDto.productId },
-        });
+        const product = await this.productService.findById(itemDto.productId);
 
         if (!product) {
           throw new NotFoundException(`Product ${itemDto.productId} not found`);
@@ -89,10 +84,13 @@ export class OrderService {
 
       // Check inventory availability
       for (const item of createOrderDto.items) {
-        const product = await this.productRepo.findOne({
-          where: { id: item.productId },
-          relations: ['inventory'],
-        });
+        const product = await this.productService.findByIdWithInventory(
+          item.productId,
+        );
+
+        if (!product) {
+          throw new NotFoundException(`Product ${item.productId} not found`);
+        }
 
         if (!product.inventory || product.inventory.quantity < item.quantity) {
           throw new BadRequestException(
@@ -130,10 +128,13 @@ export class OrderService {
 
       // Update inventory (subtract quantities)
       for (const item of createOrderDto.items) {
-        const product = await this.productRepo.findOne({
-          where: { id: item.productId },
-          relations: ['inventory'],
-        });
+        const product = await this.productService.findByIdWithInventory(
+          item.productId,
+        );
+
+        if (!product) {
+          throw new NotFoundException(`Product ${item.productId} not found`);
+        }
 
         if (product.inventory) {
           await this.inventoryService.update(product.inventory.id, {
@@ -276,10 +277,15 @@ export class OrderService {
 
       // Restore inventory
       for (const orderItem of order.order_items || []) {
-        const product = await this.productRepo.findOne({
-          where: { id: orderItem.product.id },
-          relations: ['inventory'],
-        });
+        const product = await this.productService.findByIdWithInventory(
+          orderItem.product.id,
+        );
+
+        if (!product) {
+          throw new NotFoundException(
+            `Product ${orderItem.product.id} not found`,
+          );
+        }
 
         if (product.inventory) {
           await this.inventoryService.update(product.inventory.id, {

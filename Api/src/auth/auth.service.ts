@@ -96,7 +96,10 @@ export class AuthService {
       name: `${user.profile.firstName} ${user.profile.lastName}`,
     };
 
-    return { accessToken: this.jwtService.sign(payload) };
+    return {
+      accessToken: this.jwtService.sign(payload),
+      user: { name: payload.name, email: payload.email },
+    };
   }
 
   async findByEmail(email: string) {
@@ -111,6 +114,20 @@ export class AuthService {
       this.logger.error(error);
 
       // 🔥 Bcrypt / unexpected errors
+      throw new InternalServerErrorException('Something went wrong.');
+    }
+  }
+
+  async findById(id: string) {
+    try {
+      const user = await this.AuthRepo.findOne({
+        where: { id },
+        relations: ['profile'],
+      });
+
+      return user;
+    } catch (error) {
+      this.logger.error(error);
       throw new InternalServerErrorException('Something went wrong.');
     }
   }

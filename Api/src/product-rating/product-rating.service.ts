@@ -4,14 +4,16 @@ import {
   InternalServerErrorException,
   Logger,
   BadRequestException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { CreateProductRatingDto } from './dto/create-product-rating.dto';
 import { UpdateProductRatingDto } from './dto/update-product-rating.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ProductRating } from './entities/product-rating.entity';
 import { Repository } from 'typeorm';
-import { Product } from 'src/product/entities/product.entity';
-import { Auth } from 'src/auth/entities/auth.entity';
+import { AuthService } from 'src/auth/auth.service';
+import { ProductService } from 'src/product/product.service';
 
 @Injectable()
 export class ProductRatingService {
@@ -20,27 +22,25 @@ export class ProductRatingService {
   constructor(
     @InjectRepository(ProductRating)
     private readonly productRatingRepo: Repository<ProductRating>,
-    @InjectRepository(Product)
-    private readonly productRepo: Repository<Product>,
-    @InjectRepository(Auth)
-    private readonly userRepo: Repository<Auth>,
+    @Inject(forwardRef(() => ProductService))
+    private readonly productService: ProductService,
+    @Inject(forwardRef(() => AuthService))
+    private readonly authService: AuthService,
   ) {}
 
   async create(createProductRatingDto: CreateProductRatingDto, userId: string) {
     try {
       // Validate user exists
-      const user = await this.userRepo.findOne({
-        where: { id: userId },
-      });
+      const user = await this.authService.findById(userId);
 
       if (!user) {
         throw new NotFoundException(`User ${userId} not found`);
       }
 
       // Validate product exists
-      const product = await this.productRepo.findOne({
-        where: { id: createProductRatingDto.productId },
-      });
+      const product = await this.productService.findById(
+        createProductRatingDto.productId,
+      );
 
       if (!product) {
         throw new NotFoundException(
@@ -99,9 +99,7 @@ export class ProductRatingService {
   async findByProductId(productId: string) {
     try {
       // Validate product exists
-      const product = await this.productRepo.findOne({
-        where: { id: productId },
-      });
+      const product = await this.productService.findById(productId);
 
       if (!product) {
         throw new NotFoundException(`Product ${productId} not found`);
@@ -132,9 +130,7 @@ export class ProductRatingService {
   async findByUserId(userId: string) {
     try {
       // Validate user exists
-      const user = await this.userRepo.findOne({
-        where: { id: userId },
-      });
+      const user = await this.authService.findById(userId);
 
       if (!user) {
         throw new NotFoundException(`User ${userId} not found`);

@@ -4,13 +4,15 @@ import {
   InternalServerErrorException,
   Logger,
   BadRequestException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { CreateAddressDto } from './dto/create-address.dto';
 import { UpdateAddressDto } from './dto/update-address.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Address } from './entities/address.entity';
 import { Repository } from 'typeorm';
-import { Auth } from 'src/auth/entities/auth.entity';
+import { AuthService } from 'src/auth/auth.service';
 
 @Injectable()
 export class AddressService {
@@ -19,16 +21,14 @@ export class AddressService {
   constructor(
     @InjectRepository(Address)
     private readonly addressRepo: Repository<Address>,
-    @InjectRepository(Auth)
-    private readonly userRepo: Repository<Auth>,
+    @Inject(forwardRef(() => AuthService))
+    private readonly authService: AuthService,
   ) {}
 
   async create(createAddressDto: CreateAddressDto) {
     try {
       // Validate user exists
-      const user = await this.userRepo.findOne({
-        where: { id: createAddressDto.userId },
-      });
+      const user = await this.authService.findById(createAddressDto.userId);
 
       if (!user) {
         throw new NotFoundException(
@@ -96,9 +96,7 @@ export class AddressService {
   async findByUserId(userId: string) {
     try {
       // Validate user exists
-      const user = await this.userRepo.findOne({
-        where: { id: userId },
-      });
+      const user = await this.authService.findById(userId);
 
       if (!user) {
         throw new NotFoundException(`User ${userId} not found`);
@@ -107,7 +105,10 @@ export class AddressService {
       const addresses = await this.addressRepo.find({
         where: { user: { id: userId } },
         relations: ['user'],
-        order: [{ is_default: 'DESC' }, { created_at: 'DESC' }],
+        order: {
+          is_default: 'DESC',
+          created_at: 'DESC',
+        },
       });
 
       return addresses;
@@ -141,6 +142,10 @@ export class AddressService {
       this.logger.error(`Error fetching address with ID ${id}:`, error);
       throw new InternalServerErrorException('Failed to fetch address');
     }
+  }
+
+  async findById(id: string) {
+    return this.findOne(id);
   }
 
   async update(id: string, updateAddressDto: UpdateAddressDto) {

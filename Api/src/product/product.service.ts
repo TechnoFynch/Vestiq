@@ -3,6 +3,7 @@ import {
   Injectable,
   InternalServerErrorException,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import { Brackets, Repository } from 'typeorm';
 import { Product } from './entities/product.entity';
@@ -230,6 +231,54 @@ export class ProductService {
       this.logger.error('Error in suggestProducts:', error);
       throw new InternalServerErrorException(
         'Failed to fetch product suggestions',
+      );
+    }
+  }
+
+  async findById(id: string) {
+    try {
+      const product = await this.productRepo.findOne({
+        where: { id },
+      });
+
+      if (!product) {
+        throw new NotFoundException(`Product with ID ${id} not found`);
+      }
+
+      return product;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      this.logger.error(`Error fetching product with ID ${id}:`, error);
+      throw new InternalServerErrorException('Failed to fetch product');
+    }
+  }
+
+  async findByIdWithInventory(id: string) {
+    try {
+      const product = await this.productRepo.findOne({
+        where: { id },
+        relations: ['inventory'],
+      });
+
+      if (!product) {
+        throw new NotFoundException(`Product with ID ${id} not found`);
+      }
+
+      return product;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      this.logger.error(
+        `Error fetching product with inventory for ID ${id}:`,
+        error,
+      );
+      throw new InternalServerErrorException(
+        'Failed to fetch product with inventory',
       );
     }
   }

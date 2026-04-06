@@ -1,5 +1,6 @@
 import {
   Column,
+  CreateDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
@@ -42,4 +43,7 @@ export class Address {
 
   @Column({ type: 'boolean', default: false })
   is_default!: boolean;
+
+  @CreateDateColumn()
+  created_at!: Date;
 }

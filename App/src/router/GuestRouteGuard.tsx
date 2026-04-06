@@ -1,7 +1,7 @@
 import { useAppSelector } from "@/hooks/redux";
 import { Navigate, Outlet, useLocation } from "react-router";
 
-const GuestRoute = () => {
+const GuestRouteGuard = () => {
   const token = useAppSelector((state) => state.auth.token);
   const location = useLocation();
 
@@ -14,4 +14,4 @@ const GuestRoute = () => {
   return <Outlet />;
 };
 
-export default GuestRoute;
+export default GuestRouteGuard;

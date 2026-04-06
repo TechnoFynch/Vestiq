@@ -6,12 +6,19 @@ import router from "@/router";
 import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
 import store, { persistor } from "./features/store";
+import { Toaster } from "@/components/ui/sonner";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+const queryClient = new QueryClient();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
-        <RouterProvider router={router} />
+        <QueryClientProvider client={queryClient}>
+          <Toaster />
+          <RouterProvider router={router} />
+        </QueryClientProvider>
       </PersistGate>
     </Provider>
   </StrictMode>,
