@@ -259,7 +259,8 @@ export class ProductAdminService {
       }
 
       if (updateProductDto.quantity) {
-        this.inventoryService.update(product.inventory.id, {
+        await this.inventoryService.updateAdmin({
+          productId: product.id,
           quantity: updateProductDto.quantity,
         });
       }

@@ -1,21 +1,5 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  IsUUID,
-  IsInt,
-  IsPositive,
-  IsOptional,
-  Min,
-  IsBoolean,
-} from 'class-validator';
-
-export class CreateCartDto {
-  @ApiProperty({
-    description: 'User ID for whom the cart is being created',
-    example: '550e8400-e29b-41d4-a716-446655440000',
-  })
-  @IsUUID()
-  userId!: string;
-}
+import { ApiProperty } from '@nestjs/swagger';
+import { IsUUID, IsInt, IsPositive, Min } from 'class-validator';
 
 export class CartItemDto {
   @ApiProperty({

@@ -3,6 +3,7 @@ import {
   NotFoundException,
   InternalServerErrorException,
   Logger,
+  Inject,
 } from '@nestjs/common';
 import { CreateInventoryDto } from './dto/create-inventory.dto';
 import { UpdateInventoryDto } from './dto/update-inventory.dto';
@@ -10,6 +11,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Inventory } from './entities/inventory.entity';
 import { Repository } from 'typeorm';
 import { Product } from 'src/product/entities/product.entity';
+import { ProductService } from 'src/product/product.service';
 
 @Injectable()
 export class InventoryService {
@@ -18,6 +20,8 @@ export class InventoryService {
   constructor(
     @InjectRepository(Inventory)
     private readonly inventoryRepo: Repository<Inventory>,
+    @Inject(ProductService)
+    private readonly productService: ProductService,
   ) {}
 
   async create(createInventoryDto: CreateInventoryDto) {
@@ -42,15 +46,19 @@ export class InventoryService {
     }
   }
 
-  async update(id: string, updateInventoryDto: UpdateInventoryDto) {
+  async updateAdmin(updateInventoryDto: UpdateInventoryDto) {
     try {
+      const product = await this.productService.findById(
+        updateInventoryDto.productId,
+      );
       const inventory = await this.inventoryRepo.findOne({
-        where: { id },
-        relations: ['product'],
+        where: { id: product.inventory.id },
       });
 
       if (!inventory) {
-        throw new NotFoundException(`Inventory with ID ${id} not found`);
+        throw new NotFoundException(
+          `Inventory with ID ${product.inventory.id} not found`,
+        );
       }
 
       const { quantity } = updateInventoryDto;
@@ -87,7 +95,7 @@ export class InventoryService {
         throw error;
       }
 
-      this.logger.error(`Error updating inventory with ID ${id}:`, error);
+      this.logger.error(`Error updating inventory:`, error);
       throw new InternalServerErrorException('Failed to update inventory');
     }
   }
@@ -126,6 +134,46 @@ export class InventoryService {
 
       this.logger.error(`Error resetting inventory with ID ${id}:`, error);
       throw new InternalServerErrorException('Failed to reset inventory');
+    }
+  }
+
+  async update(productId: string, quantity: number) {
+    try {
+      const inventory = await this.inventoryRepo.findOne({
+        where: { product: { id: productId } },
+        relations: ['product'],
+      });
+
+      if (!inventory) {
+        throw new NotFoundException(
+          `Inventory for product ID ${productId} not found`,
+        );
+      }
+
+      inventory.quantity += quantity;
+      inventory.reserved += quantity;
+      const updatedInventory = await this.inventoryRepo.save(inventory);
+
+      this.logger.log(
+        `Inventory updated for product ID: ${inventory.product.id}, new quantity: ${updatedInventory.quantity}`,
+      );
+
+      return {
+        success: true,
+        inventoryId: updatedInventory.id,
+        productId: updatedInventory.product.id,
+        newQuantity: updatedInventory.quantity,
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      this.logger.error(
+        `Error updating inventory for product ${productId}:`,
+        error,
+      );
+      throw new InternalServerErrorException('Failed to update inventory');
     }
   }
 }

@@ -7,7 +7,7 @@ export class CreateCartItemDto {
     description: 'Product ID to be added to the cart',
   })
   @IsUUID()
-  product!: string;
+  productId!: string;
 
   @ApiProperty({
     example: 2,

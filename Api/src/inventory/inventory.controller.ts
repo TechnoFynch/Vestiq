@@ -27,11 +27,9 @@ export class InventoryController {
   }
 
   @Patch(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updateInventoryDto: UpdateInventoryDto,
-  ) {
-    return this.inventoryService.update(id, updateInventoryDto);
+  @UseGuards(JwtAuthGuard)
+  update(@Body() updateInventoryDto: UpdateInventoryDto) {
+    return this.inventoryService.updateAdmin(updateInventoryDto);
   }
 
   @Delete(':id')

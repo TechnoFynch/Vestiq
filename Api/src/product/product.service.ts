@@ -239,6 +239,7 @@ export class ProductService {
     try {
       const product = await this.productRepo.findOne({
         where: { id },
+        relations: ['category', 'inventory', 'images', 'product_rating'],
       });
 
       if (!product) {
@@ -253,33 +254,6 @@ export class ProductService {
 
       this.logger.error(`Error fetching product with ID ${id}:`, error);
       throw new InternalServerErrorException('Failed to fetch product');
-    }
-  }
-
-  async findByIdWithInventory(id: string) {
-    try {
-      const product = await this.productRepo.findOne({
-        where: { id },
-        relations: ['inventory'],
-      });
-
-      if (!product) {
-        throw new NotFoundException(`Product with ID ${id} not found`);
-      }
-
-      return product;
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
-
-      this.logger.error(
-        `Error fetching product with inventory for ID ${id}:`,
-        error,
-      );
-      throw new InternalServerErrorException(
-        'Failed to fetch product with inventory',
-      );
     }
   }
 }

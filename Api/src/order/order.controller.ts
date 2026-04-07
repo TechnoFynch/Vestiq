@@ -7,6 +7,7 @@ import {
   Param,
   UseGuards,
   Delete,
+  Req,
 } from '@nestjs/common';
 import { OrderService } from './order.service';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -22,8 +23,11 @@ export class OrderController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
-  create(@Body() createOrderDto: CreateOrderDto) {
-    return this.orderService.create(createOrderDto);
+  create(@Body() createOrderDto: CreateOrderDto, @Req() req: any) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    const user = req.user.sub as string;
+    // return 'Hello';
+    return this.orderService.create(createOrderDto, user);
   }
 
   @Get()

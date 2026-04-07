@@ -19,6 +19,8 @@ import { AuthService } from 'src/auth/auth.service';
 import { AddressService } from 'src/address/address.service';
 import { ProductService } from 'src/product/product.service';
 import { OrderStatus } from './enums/order-status.enum';
+import { DataSource } from 'typeorm';
+import { Product } from 'src/product/entities/product.entity';
 
 @Injectable()
 export class OrderService {
@@ -35,17 +37,26 @@ export class OrderService {
     private readonly addressService: AddressService,
     @Inject(forwardRef(() => ProductService))
     private readonly productService: ProductService,
+    @Inject(InventoryService)
     private readonly inventoryService: InventoryService,
+    @Inject(CartService)
     private readonly cartService: CartService,
+    private readonly dataSource: DataSource,
   ) {}
 
-  async create(createOrderDto: CreateOrderDto) {
+  async create(createOrderDto: CreateOrderDto, userId: string) {
     try {
+      const products: Product[] = [];
+
+      const queryRunner = this.dataSource.createQueryRunner();
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+
       // Validate user exists
-      const user = await this.authService.findById(createOrderDto.userId);
+      const user = await this.authService.findById(userId);
 
       if (!user) {
-        throw new NotFoundException(`User ${createOrderDto.userId} not found`);
+        throw new NotFoundException(`User ${userId} not found`);
       }
 
       // Validate address exists and belongs to user
@@ -59,103 +70,71 @@ export class OrderService {
         );
       }
 
-      // Validate products and calculate total
-      let totalAmount = 0;
-      const orderItems: OrderItem[] = [];
+      const cart = await this.cartService.findByUserId(userId);
 
-      for (const itemDto of createOrderDto.items) {
-        const product = await this.productService.findById(itemDto.productId);
-
-        if (!product) {
-          throw new NotFoundException(`Product ${itemDto.productId} not found`);
-        }
-
-        const itemTotal = product.price * itemDto.quantity;
-        totalAmount += itemTotal;
-
-        const orderItem = this.orderItemRepo.create({
-          product,
-          quantity: itemDto.quantity,
-          price: product.price,
-        });
-
-        orderItems.push(orderItem);
+      if (!cart || !cart.cart_items || cart.cart_items.length === 0) {
+        throw new BadRequestException('Cart is empty');
       }
 
-      // Check inventory availability
-      for (const item of createOrderDto.items) {
-        const product = await this.productService.findByIdWithInventory(
-          item.productId,
-        );
+      let totalAmount = 0;
+
+      const orderItems: Partial<OrderItem>[] = [];
+
+      for (const cartItem of cart.cart_items) {
+        const product = await this.productService.findById(cartItem.product.id);
 
         if (!product) {
-          throw new NotFoundException(`Product ${item.productId} not found`);
-        }
-
-        if (!product.inventory || product.inventory.quantity < item.quantity) {
-          throw new BadRequestException(
-            `Insufficient inventory for product ${product.name}. Available: ${product.inventory?.quantity || 0}, Requested: ${item.quantity}`,
+          throw new NotFoundException(
+            `Product ${cartItem.product.id} not found`,
           );
         }
+
+        products.push(product);
+
+        const available =
+          product.inventory.quantity - product.inventory.reserved;
+        if (available < cartItem.quantity) {
+          throw new BadRequestException(
+            `Insufficient stock for product ${cartItem.product.id}`,
+          );
+        }
+
+        const itemTotal =
+          (product.sale_price ?? product.price) * cartItem.quantity;
+        totalAmount += itemTotal;
+
+        orderItems.push({
+          product: product,
+          quantity: cartItem.quantity,
+          price: itemTotal,
+        });
       }
 
-      // Create order with address snapshot
-      const addressSnapshot = {
-        full_name: address.full_name,
-        phone: address.phone,
-        line1: address.line1,
-        line2: address.line2,
-        city: address.city,
-        state: address.state,
-        country: address.country,
-        postal_code: address.postal_code,
-      };
-
-      const order = this.orderRepo.create({
+      const order = queryRunner.manager.create(Order, {
         user,
-        address_snapshot: addressSnapshot,
+        address_snapshot: address,
         total_amount: totalAmount,
         status: OrderStatus.PENDING,
       });
 
-      const savedOrder = await this.orderRepo.save(order);
+      const savedOrder = await queryRunner.manager.save(order);
 
-      // Create order items
-      for (const orderItem of orderItems) {
-        orderItem.order = savedOrder;
-        await this.orderItemRepo.save(orderItem);
-      }
+      for (const itemData of orderItems) {
+        const orderItem = queryRunner.manager.create(OrderItem, {
+          order: savedOrder,
+          product: itemData.product,
+          quantity: itemData.quantity,
+          price: itemData.price,
+        });
+        await queryRunner.manager.save(orderItem);
 
-      // Update inventory (subtract quantities)
-      for (const item of createOrderDto.items) {
-        const product = await this.productService.findByIdWithInventory(
-          item.productId,
-        );
-
-        if (!product) {
-          throw new NotFoundException(`Product ${item.productId} not found`);
-        }
-
-        if (product.inventory) {
-          await this.inventoryService.update(product.inventory.id, {
-            quantity: -item.quantity,
-          });
+        if (orderItem.product.inventory) {
+          await this.inventoryService.update(
+            orderItem.product.id,
+            orderItem.quantity,
+          );
         }
       }
-
-      // Get complete order with relations
-      const completeOrder = await this.orderRepo.findOne({
-        where: { id: savedOrder.id },
-        relations: ['user', 'order_items', 'order_items.product'],
-      });
-
-      this.logger.log(
-        `Order created: ${savedOrder.id} for user ${createOrderDto.userId}`,
-      );
-      return {
-        success: true,
-        order: completeOrder,
-      };
     } catch (error) {
       if (
         error instanceof NotFoundException ||
@@ -225,95 +204,82 @@ export class OrderService {
   }
 
   async update(id: string, updateOrderDto: UpdateOrderDto) {
-    try {
-      const order = await this.orderRepo.findOne({
-        where: { id },
-        relations: ['user', 'order_items', 'order_items.product'],
-      });
-
-      if (!order) {
-        throw new NotFoundException(`Order with ID ${id} not found`);
-      }
-
-      if (updateOrderDto.status !== undefined) {
-        order.status = updateOrderDto.status;
-      }
-
-      const updatedOrder = await this.orderRepo.save(order);
-
-      this.logger.log(
-        `Order ${id} updated to status: ${updateOrderDto.status}`,
-      );
-      return {
-        success: true,
-        order: updatedOrder,
-      };
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
-
-      this.logger.error(`Error updating order with ID ${id}:`, error);
-      throw new InternalServerErrorException('Failed to update order');
-    }
+    // try {
+    //   const order = await this.orderRepo.findOne({
+    //     where: { id },
+    //     relations: ['user', 'order_items', 'order_items.product'],
+    //   });
+    //   if (!order) {
+    //     throw new NotFoundException(`Order with ID ${id} not found`);
+    //   }
+    //   if (updateOrderDto.status !== undefined) {
+    //     order.status = updateOrderDto.status;
+    //   }
+    //   const updatedOrder = await this.orderRepo.save(order);
+    //   this.logger.log(
+    //     `Order ${id} updated to status: ${updateOrderDto.status}`,
+    //   );
+    //   return {
+    //     success: true,
+    //     order: updatedOrder,
+    //   };
+    // } catch (error) {
+    //   if (error instanceof NotFoundException) {
+    //     throw error;
+    //   }
+    //   this.logger.error(`Error updating order with ID ${id}:`, error);
+    //   throw new InternalServerErrorException('Failed to update order');
+    // }
   }
 
   async cancel(id: string) {
-    try {
-      const order = await this.orderRepo.findOne({
-        where: { id },
-        relations: ['user', 'order_items', 'order_items.product'],
-      });
-
-      if (!order) {
-        throw new NotFoundException(`Order with ID ${id} not found`);
-      }
-
-      if (order.status !== OrderStatus.PENDING) {
-        throw new BadRequestException(
-          `Cannot cancel order with status: ${order.status}`,
-        );
-      }
-
-      // Restore inventory
-      for (const orderItem of order.order_items || []) {
-        const product = await this.productService.findByIdWithInventory(
-          orderItem.product.id,
-        );
-
-        if (!product) {
-          throw new NotFoundException(
-            `Product ${orderItem.product.id} not found`,
-          );
-        }
-
-        if (product.inventory) {
-          await this.inventoryService.update(product.inventory.id, {
-            quantity: orderItem.quantity,
-          });
-        }
-      }
-
-      // Update order status
-      order.status = OrderStatus.CANCELLED;
-      await this.orderRepo.save(order);
-
-      this.logger.log(`Order ${id} cancelled and inventory restored`);
-      return {
-        success: true,
-        message: 'Order cancelled successfully',
-        order,
-      };
-    } catch (error) {
-      if (
-        error instanceof NotFoundException ||
-        error instanceof BadRequestException
-      ) {
-        throw error;
-      }
-
-      this.logger.error(`Error cancelling order with ID ${id}:`, error);
-      throw new InternalServerErrorException('Failed to cancel order');
-    }
+    // try {
+    //   const order = await this.orderRepo.findOne({
+    //     where: { id },
+    //     relations: ['user', 'order_items', 'order_items.product'],
+    //   });
+    //   if (!order) {
+    //     throw new NotFoundException(`Order with ID ${id} not found`);
+    //   }
+    //   if (order.status !== OrderStatus.PENDING) {
+    //     throw new BadRequestException(
+    //       `Cannot cancel order with status: ${order.status}`,
+    //     );
+    //   }
+    //   // Restore inventory
+    //   for (const orderItem of order.order_items || []) {
+    //     const product = await this.productService.findById(
+    //       orderItem.product.id,
+    //     );
+    //     if (!product) {
+    //       throw new NotFoundException(
+    //         `Product ${orderItem.product.id} not found`,
+    //       );
+    //     }
+    //     if (product.inventory) {
+    //       await this.inventoryService.updateAdmin(product.inventory.id,
+    //         quantity: orderItem.quantity,
+    //     );
+    //     }
+    //   }
+    //   // Update order status
+    //   order.status = OrderStatus.CANCELLED;
+    //   await this.orderRepo.save(order);
+    //   this.logger.log(`Order ${id} cancelled and inventory restored`);
+    //   return {
+    //     success: true,
+    //     message: 'Order cancelled successfully',
+    //     order,
+    //   };
+    // } catch (error) {
+    //   if (
+    //     error instanceof NotFoundException ||
+    //     error instanceof BadRequestException
+    //   ) {
+    //     throw error;
+    //   }
+    //   this.logger.error(`Error cancelling order with ID ${id}:`, error);
+    //   throw new InternalServerErrorException('Failed to cancel order');
+    // }
   }
 }

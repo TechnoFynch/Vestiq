@@ -29,6 +29,12 @@ export class Inventory {
   })
   reserved!: number;
 
+  @Column({
+    type: 'int',
+    default: 0,
+  })
+  low_stock_threshold!: number;
+
   @UpdateDateColumn()
   updated_at!: Date;
 }

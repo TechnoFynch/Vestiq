@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { ProductAdminService } from './product-admin.service';
 import { ProductAdminController } from './product-admin.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -15,7 +15,7 @@ import { ProductService } from './product.service';
   providers: [ProductAdminService, ProductImageService, ProductService],
   imports: [
     TypeOrmModule.forFeature([Product, ProductImage]),
-    InventoryModule,
+    forwardRef(() => InventoryModule),
     ConfigModule,
   ],
   exports: [ProductService],
