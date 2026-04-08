@@ -6,7 +6,6 @@ import {
   BadRequestException,
   Inject,
   forwardRef,
-  UseGuards,
 } from '@nestjs/common';
 import { CreateAddressDto } from './dto/create-address.dto';
 import { UpdateAddressDto } from './dto/update-address.dto';
@@ -14,10 +13,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Address } from './entities/address.entity';
 import { Repository } from 'typeorm';
 import { AuthService } from 'src/auth/auth.service';
-import { JwtAuthGuard } from 'src/guards/auth.guard';
 
 @Injectable()
-@UseGuards(JwtAuthGuard)
 export class AddressService {
   private readonly logger = new Logger(AddressService.name);
 
