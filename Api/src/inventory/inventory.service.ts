@@ -9,7 +9,7 @@ import { CreateInventoryDto } from './dto/create-inventory.dto';
 import { UpdateInventoryDto } from './dto/update-inventory.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Inventory } from './entities/inventory.entity';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { Product } from 'src/product/entities/product.entity';
 import { ProductService } from 'src/product/product.service';
 
@@ -174,6 +174,35 @@ export class InventoryService {
         error,
       );
       throw new InternalServerErrorException('Failed to update inventory');
+    }
+  }
+
+  async deductStock(manager: EntityManager, product: Product, qty: number) {
+    const inventory = await manager
+      .createQueryBuilder(Inventory, 'inventory')
+      .setLock('pessimistic_write')
+      .where('inventory.product = :id', { id: product.id })
+      .getOne();
+
+    if (inventory) {
+      await manager.update(Inventory, inventory.id, {
+        quantity: inventory.quantity - qty,
+        reserved: inventory.reserved - qty,
+      });
+    }
+  }
+
+  async restoreStock(manager: EntityManager, product: Product, qty: number) {
+    const inventory = await manager
+      .createQueryBuilder(Inventory, 'inventory')
+      .setLock('pessimistic_write')
+      .where('inventory.product = :id', { id: product.id })
+      .getOne();
+
+    if (inventory) {
+      await manager.update(Inventory, inventory.id, {
+        quantity: inventory.quantity + qty,
+      });
     }
   }
 }
