@@ -111,7 +111,7 @@ export class CartService {
       });
 
       if (!cart) {
-        throw new NotFoundException(`Cart for user ${userId} not found`);
+        throw new BadRequestException(`Cart for user ${userId} not found`);
       }
 
       return cart;

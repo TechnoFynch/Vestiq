@@ -6,6 +6,8 @@ import {
   BadRequestException,
   Inject,
   forwardRef,
+  ForbiddenException,
+  ConflictException,
 } from '@nestjs/common';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
@@ -21,6 +23,7 @@ import { ProductService } from 'src/product/product.service';
 import { OrderStatus } from './enums/order-status.enum';
 import { DataSource } from 'typeorm';
 import { Product } from 'src/product/entities/product.entity';
+import { Inventory } from 'src/inventory/entities/inventory.entity';
 
 @Injectable()
 export class OrderService {
@@ -46,99 +49,106 @@ export class OrderService {
 
   async create(createOrderDto: CreateOrderDto, userId: string) {
     try {
-      const products: Product[] = [];
+      let newOrder!: Order;
 
-      const queryRunner = this.dataSource.createQueryRunner();
-      await queryRunner.connect();
-      await queryRunner.startTransaction();
+      await this.dataSource.transaction(async (manager) => {
+        const cart = await this.cartService.findByUserId(userId);
 
-      // Validate user exists
-      const user = await this.authService.findById(userId);
+        if (cart.cart_items!.length === 0) {
+          throw new BadRequestException("Cart is empty or doesn't exist");
+        }
 
-      if (!user) {
-        throw new NotFoundException(`User ${userId} not found`);
-      }
-
-      // Validate address exists and belongs to user
-      const address = await this.addressService.findById(
-        createOrderDto.addressId,
-      );
-
-      if (!address) {
-        throw new NotFoundException(
-          `Address ${createOrderDto.addressId} not found or doesn't belong to user`,
+        const address = await this.addressService.findById(
+          createOrderDto.addressId,
         );
-      }
 
-      const cart = await this.cartService.findByUserId(userId);
-
-      if (!cart || !cart.cart_items || cart.cart_items.length === 0) {
-        throw new BadRequestException('Cart is empty');
-      }
-
-      let totalAmount = 0;
-
-      const orderItems: Partial<OrderItem>[] = [];
-
-      for (const cartItem of cart.cart_items) {
-        const product = await this.productService.findById(cartItem.product.id);
-
-        if (!product) {
-          throw new NotFoundException(
-            `Product ${cartItem.product.id} not found`,
+        if (address.user.id !== userId) {
+          throw new ForbiddenException(
+            "You don't have permission to use this address",
           );
         }
 
-        products.push(product);
+        const addressSnapshot = {
+          full_name: address.full_name,
+          phone: address.phone,
+          line1: address.line1,
+          line2: address.line2,
+          city: address.city,
+          state: address.state,
+          postal_code: address.postal_code,
+          country: address.country,
+        };
 
-        const available =
-          product.inventory.quantity - product.inventory.reserved;
-        if (available < cartItem.quantity) {
-          throw new BadRequestException(
-            `Insufficient stock for product ${cartItem.product.id}`,
-          );
-        }
+        let orderTotal = 0;
 
-        const itemTotal =
-          (product.sale_price ?? product.price) * cartItem.quantity;
-        totalAmount += itemTotal;
-
-        orderItems.push({
-          product: product,
-          quantity: cartItem.quantity,
-          price: itemTotal,
+        newOrder = await manager.save(Order, {
+          user: { id: userId },
+          address_snapshot: addressSnapshot,
+          total_amount: orderTotal,
+          status: OrderStatus.PENDING,
         });
-      }
 
-      const order = queryRunner.manager.create(Order, {
-        user,
-        address_snapshot: address,
-        total_amount: totalAmount,
-        status: OrderStatus.PENDING,
+        for (const cartItem of cart.cart_items!) {
+          const inventory = await manager
+            .createQueryBuilder(Inventory, 'inventory')
+            .setLock('pessimistic_write')
+            .where('inventory.product = :productId', {
+              productId: cartItem.product.id,
+            })
+            .getOne();
+
+          if (inventory) {
+            const available = inventory.quantity - inventory.reserved;
+
+            if (available < cartItem.quantity) {
+              throw new ConflictException(
+                `Insufficient stock for product ${cartItem.product.name}`,
+              );
+            }
+
+            inventory.reserved += cartItem.quantity;
+            await manager.save(inventory);
+
+            orderTotal += cartItem.quantity * cartItem.price_at_add;
+
+            await manager.save(OrderItem, {
+              order: { id: newOrder.id },
+              product: { id: cartItem.product.id },
+              quantity: cartItem.quantity,
+              price_at_add: cartItem.price_at_add,
+            });
+
+            await this.inventoryService.deductStock(
+              manager,
+              cartItem.product,
+              cartItem.quantity,
+            );
+          }
+        }
+        await manager.update(
+          Order,
+          { id: newOrder.id },
+          { total_amount: orderTotal, status: OrderStatus.CONFIRMED },
+        );
       });
 
-      const savedOrder = await queryRunner.manager.save(order);
+      await this.cartService.clearCart(userId);
 
-      for (const itemData of orderItems) {
-        const orderItem = queryRunner.manager.create(OrderItem, {
-          order: savedOrder,
-          product: itemData.product,
-          quantity: itemData.quantity,
-          price: itemData.price,
-        });
-        await queryRunner.manager.save(orderItem);
+      const order = await this.orderRepo.findOne({
+        where: { id: newOrder.id },
+        relations: ['user', 'order_items', 'order_items.product'],
+      });
 
-        if (orderItem.product.inventory) {
-          await this.inventoryService.update(
-            orderItem.product.id,
-            orderItem.quantity,
-          );
-        }
-      }
+      return {
+        success: true,
+        message: 'Order created successfully',
+        order: order,
+      };
     } catch (error) {
       if (
         error instanceof NotFoundException ||
-        error instanceof BadRequestException
+        error instanceof BadRequestException ||
+        error instanceof ConflictException
       ) {
         throw error;
       }
@@ -164,7 +174,7 @@ export class OrderService {
     }
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, userId: string) {
     try {
       const order = await this.orderRepo.findOne({
         where: { id },
@@ -172,12 +182,22 @@ export class OrderService {
       });
 
       if (!order) {
-        throw new NotFoundException(`Order with ID ${id} not found`);
+        throw new BadRequestException(`Order with ID ${id} not found`);
+      }
+
+      if (order.user.id !== userId) {
+        throw new ForbiddenException(
+          `Order with ID ${id} does not belong to user ${userId}`,
+        );
       }
 
       return order;
     } catch (error) {
-      if (error instanceof NotFoundException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
 
@@ -186,17 +206,33 @@ export class OrderService {
     }
   }
 
-  async findByUserId(userId: string) {
+  async findByUserId(userId: string, limit: number = 10, page: number = 1) {
     try {
-      const orders = await this.orderRepo.find({
+      const skip = (page - 1) * limit;
+
+      const [orders, total] = await this.orderRepo.findAndCount({
         where: { user: { id: userId } },
         relations: ['user', 'order_items', 'order_items.product'],
         order: {
           created_at: 'DESC',
         },
+        take: limit,
+        skip: skip,
       });
 
-      return orders;
+      const totalPages = Math.ceil(total / limit);
+
+      return {
+        orders,
+        pagination: {
+          total,
+          page,
+          limit,
+          totalPages,
+          hasNext: page < totalPages,
+          hasPrev: page > 1,
+        },
+      };
     } catch (error) {
       this.logger.error(`Error fetching orders for user ${userId}:`, error);
       throw new InternalServerErrorException('Failed to fetch user orders');
@@ -232,54 +268,60 @@ export class OrderService {
     // }
   }
 
-  async cancel(id: string) {
-    // try {
-    //   const order = await this.orderRepo.findOne({
-    //     where: { id },
-    //     relations: ['user', 'order_items', 'order_items.product'],
-    //   });
-    //   if (!order) {
-    //     throw new NotFoundException(`Order with ID ${id} not found`);
-    //   }
-    //   if (order.status !== OrderStatus.PENDING) {
-    //     throw new BadRequestException(
-    //       `Cannot cancel order with status: ${order.status}`,
-    //     );
-    //   }
-    //   // Restore inventory
-    //   for (const orderItem of order.order_items || []) {
-    //     const product = await this.productService.findById(
-    //       orderItem.product.id,
-    //     );
-    //     if (!product) {
-    //       throw new NotFoundException(
-    //         `Product ${orderItem.product.id} not found`,
-    //       );
-    //     }
-    //     if (product.inventory) {
-    //       await this.inventoryService.updateAdmin(product.inventory.id,
-    //         quantity: orderItem.quantity,
-    //     );
-    //     }
-    //   }
-    //   // Update order status
-    //   order.status = OrderStatus.CANCELLED;
-    //   await this.orderRepo.save(order);
-    //   this.logger.log(`Order ${id} cancelled and inventory restored`);
-    //   return {
-    //     success: true,
-    //     message: 'Order cancelled successfully',
-    //     order,
-    //   };
-    // } catch (error) {
-    //   if (
-    //     error instanceof NotFoundException ||
-    //     error instanceof BadRequestException
-    //   ) {
-    //     throw error;
-    //   }
-    //   this.logger.error(`Error cancelling order with ID ${id}:`, error);
-    //   throw new InternalServerErrorException('Failed to cancel order');
-    // }
+  async cancel(id: string, userId: string) {
+    try {
+      const order = await this.orderRepo.findOne({
+        where: { id },
+        relations: ['order_items', 'order_items.product'],
+      });
+
+      if (order?.user.id !== userId) {
+        throw new ForbiddenException(
+          'You are not authorized to cancel this order',
+        );
+      }
+
+      if (
+        ![
+          OrderStatus.DELIVERED,
+          OrderStatus.CONFIRMED,
+          OrderStatus.SHIPPED,
+          OrderStatus.TO_RETURN,
+          OrderStatus.RETURNED,
+        ].includes(order.status)
+      ) {
+        throw new BadRequestException('Order cannot be cancelled at this time');
+      }
+
+      await this.dataSource.transaction(async (manager) => {
+        for (const orderItem of order.order_items!) {
+          await this.inventoryService.restoreStock(
+            manager,
+            orderItem.product,
+            orderItem.quantity,
+          );
+        }
+
+        await manager.update(Order, order.id, {
+          status: OrderStatus.CANCELLED,
+        });
+      });
+
+      return {
+        success: true,
+        message: 'Order cancelled successfully',
+        order,
+      };
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException ||
+        error instanceof ForbiddenException
+      ) {
+        throw error;
+      }
+      this.logger.error(`Error cancelling order with ID ${id}:`, error);
+      throw new InternalServerErrorException('Failed to cancel order');
+    }
   }
 }
