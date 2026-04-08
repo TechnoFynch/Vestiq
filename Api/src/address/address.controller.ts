@@ -41,7 +41,7 @@ export class AddressController {
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   findOne(@Param('id') id: string) {
-    return this.addressService.findOne(id);
+    return this.addressService.findById(id);
   }
 
   @Patch(':id')

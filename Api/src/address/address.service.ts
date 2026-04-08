@@ -6,6 +6,7 @@ import {
   BadRequestException,
   Inject,
   forwardRef,
+  UseGuards,
 } from '@nestjs/common';
 import { CreateAddressDto } from './dto/create-address.dto';
 import { UpdateAddressDto } from './dto/update-address.dto';
@@ -13,8 +14,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Address } from './entities/address.entity';
 import { Repository } from 'typeorm';
 import { AuthService } from 'src/auth/auth.service';
+import { JwtAuthGuard } from 'src/guards/auth.guard';
 
 @Injectable()
+@UseGuards(JwtAuthGuard)
 export class AddressService {
   private readonly logger = new Logger(AddressService.name);
 
@@ -99,7 +102,7 @@ export class AddressService {
       const user = await this.authService.findById(userId);
 
       if (!user) {
-        throw new NotFoundException(`User ${userId} not found`);
+        throw new BadRequestException(`User ${userId} not found`);
       }
 
       const addresses = await this.addressRepo.find({
@@ -122,7 +125,7 @@ export class AddressService {
     }
   }
 
-  async findOne(id: string) {
+  async findById(id: string) {
     try {
       const address = await this.addressRepo.findOne({
         where: { id },
@@ -142,10 +145,6 @@ export class AddressService {
       this.logger.error(`Error fetching address with ID ${id}:`, error);
       throw new InternalServerErrorException('Failed to fetch address');
     }
-  }
-
-  async findById(id: string) {
-    return this.findOne(id);
   }
 
   async update(id: string, updateAddressDto: UpdateAddressDto) {
