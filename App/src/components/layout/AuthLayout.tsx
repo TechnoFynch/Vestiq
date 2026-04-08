@@ -4,8 +4,8 @@ import { CheckCircle } from "lucide-react";
 const AuthLayout = () => {
   return (
     <main className="min-h-screen min-w-screen overflow-hidden flex items-center justify-center bg-slate-200">
-      <section className="grid grid-cols-2 w-full max-w-4xl shadow-sm">
-        <div className="flex flex-col items-start justify-between gap-8 bg-slate-900 p-8 rounded-l-lg">
+      <section className="grid grid-cols-1 md:grid-cols-2 w-full max-w-4xl shadow-sm">
+        <div className="hidden md:flex flex-col items-start justify-between gap-8 bg-slate-900 p-8 rounded-l-lg">
           <h1 className="font-bold text-4xl text-gray-300">
             Shop<span className="font-bold text-4xl text-indigo-400">Core</span>
           </h1>
