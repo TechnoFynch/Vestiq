@@ -20,6 +20,8 @@ import { axiosInstance } from "@/services/axiosInstance";
 import { toast } from "sonner";
 import type { AxiosError } from "axios";
 import { Spinner } from "@/components/ui/spinner";
+import apiEndpoints from "@/constants/apiEndpoints";
+import appRoutes from "@/constants/appRoutes";
 
 type RegisterInputs = {
   firstName: string;
@@ -79,7 +81,7 @@ const Register = () => {
   const { mutate, isPending, isIdle, isError, error } = useMutation({
     mutationFn: (data: RegisterInputs) =>
       axiosInstance
-        .post("/auth/register", {
+        .post(apiEndpoints.register, {
           user: {
             email: data.email,
             password: data.password,
@@ -93,7 +95,7 @@ const Register = () => {
         .then((r) => r.data),
     onSuccess: (responseData) => {
       toast.success("Account created Succesfully!");
-      navigate("/login");
+      navigate(appRoutes.user.login);
     },
     onError: (err: AxiosError<{ message: string }>) => {
       toast.error(err.response?.data.message || "Registration failed");
@@ -148,10 +150,11 @@ const Register = () => {
       <h2 className="text-2xl font-semibold mt-4">Create your account</h2>
       <p className="text-gray-700">
         Already have an account?{" "}
-        <Link to="/login" className="text-blue-600">
+        <Link to={appRoutes.user.login} className="text-blue-600">
           Sign in
         </Link>
       </p>
+      {isError && <p className="text-destructive">{JSON.stringify(error)}</p>}
       <form noValidate className="mt-4" onSubmit={handleSubmit(onSubmit)}>
         <FieldSet>
           <FieldGroup>

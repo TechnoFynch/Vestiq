@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   InternalServerErrorException,
@@ -74,32 +75,40 @@ export class AuthService {
   }
 
   public async login(createAuthDto: CreateAuthDto) {
-    const user = await this.findByEmail(createAuthDto.email);
+    try {
+      const user = await this.findByEmail(createAuthDto.email);
 
-    if (!user) {
-      throw new UnauthorizedException();
+      if (!user) {
+        throw new BadRequestException('Email or password is incorrect!');
+      }
+
+      const isMatch = await bcrypt.compare(
+        createAuthDto.password,
+        user.password_hash,
+      );
+
+      if (!isMatch) {
+        throw new BadRequestException('Email or password is incorrect!');
+      }
+
+      const payload = {
+        sub: user.id,
+        role: user.role,
+        email: user.email,
+        name: `${user.profile.firstName} ${user.profile.lastName}`,
+      };
+
+      return {
+        accessToken: this.jwtService.sign(payload),
+        user: { name: payload.name, email: payload.email },
+      };
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Something went wrong.');
     }
-
-    const isMatch = await bcrypt.compare(
-      createAuthDto.password,
-      user.password_hash,
-    );
-
-    if (!isMatch) {
-      throw new UnauthorizedException();
-    }
-
-    const payload = {
-      sub: user.id,
-      role: user.role,
-      email: user.email,
-      name: `${user.profile.firstName} ${user.profile.lastName}`,
-    };
-
-    return {
-      accessToken: this.jwtService.sign(payload),
-      user: { name: payload.name, email: payload.email },
-    };
   }
 
   async findByEmail(email: string) {
