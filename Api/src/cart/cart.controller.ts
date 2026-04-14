@@ -22,21 +22,23 @@ import { UpdateCartItemDto } from 'src/cart/dto/update-cart_item.dto';
 export class CartController {
   constructor(private readonly cartService: CartService) {}
 
+  // TODO: Move to AdminController Later
+  // @Get()
+  // @UseGuards(JwtAuthGuard, AdminGuard)
+  // findAll() {
+  //   return this.cartService.findAll();
+  // }
+
+  // @Get(':id')
+  // @UseGuards(JwtAuthGuard, AdminGuard)
+  // findOne(@Param('id') id: string) {
+  //   return this.cartService.findOne(id);
+  // }
+
   @Get()
-  @UseGuards(JwtAuthGuard, AdminGuard)
-  findAll() {
-    return this.cartService.findAll();
-  }
-
-  @Get(':id')
-  @UseGuards(JwtAuthGuard, AdminGuard)
-  findOne(@Param('id') id: string) {
-    return this.cartService.findOne(id);
-  }
-
-  @Get('user/:userId')
   @UseGuards(JwtAuthGuard)
-  findByUserId(@Param('userId') userId: string) {
+  findByUserId(@Req() req: any) {
+    const userId = req.user.sub;
     return this.cartService.findByUserId(userId);
   }
 

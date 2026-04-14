@@ -16,7 +16,7 @@ createRoot(document.getElementById("root")!).render(
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
         <QueryClientProvider client={queryClient}>
-          <Toaster />
+          <Toaster position="top-right" />
           <RouterProvider router={router} />
         </QueryClientProvider>
       </PersistGate>

@@ -52,7 +52,7 @@ export class OrderService {
       let newOrder!: Order;
 
       await this.dataSource.transaction(async (manager) => {
-        const cart = await this.cartService.findByUserId(userId);
+        const cart = (await this.cartService.findByUserId(userId)).cart;
 
         if (cart.cart_items!.length === 0) {
           throw new BadRequestException("Cart is empty or doesn't exist");

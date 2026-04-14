@@ -81,45 +81,15 @@ export class CartService {
     }
   }
 
-  async findOne(id: string) {
-    try {
-      const cart = await this.cartRepo.findOne({
-        where: { id },
-        relations: ['user', 'cart_items', 'cart_items.product'],
-      });
-
-      if (!cart) {
-        throw new NotFoundException(`Cart with ID ${id} not found`);
-      }
-
-      return cart;
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
-
-      this.logger.error(`Error fetching cart with ID ${id}:`, error);
-      throw new InternalServerErrorException('Failed to fetch cart');
-    }
-  }
-
   async findByUserId(userId: string) {
     try {
-      const cart = await this.cartRepo.findOne({
-        where: { user: { id: userId } },
-        relations: ['user', 'cart_items', 'cart_items.product'],
-      });
+      const cartResult = await this.findOrCreate(userId);
 
-      if (!cart) {
-        throw new BadRequestException(`Cart for user ${userId} not found`);
-      }
-
-      return cart;
+      return {
+        cart: cartResult.cart,
+        count: cartResult.cart.cart_items?.length ?? 0,
+      };
     } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
-
       this.logger.error(`Error fetching cart for user ${userId}:`, error);
       throw new InternalServerErrorException('Failed to fetch user cart');
     }
@@ -128,7 +98,7 @@ export class CartService {
   async addItemToCart(userId: string, itemDto: CartItemDto) {
     try {
       // Get or create cart for user
-      const cart = await this.findByUserId(userId);
+      const cart = (await this.findByUserId(userId)).cart;
 
       // Verify product exists and get current price
       const product = await this.productService.findById(itemDto.productId);
