@@ -3,5 +3,6 @@ export default {
   login: "/auth/login",
   user: {
     getCart: "/cart",
+    suggestProducts: (query: string) => `/product/suggest?query=${query}`,
   },
 };

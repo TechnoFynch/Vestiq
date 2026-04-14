@@ -31,6 +31,11 @@ import { removeToken } from "@/features/slices/authSlice";
 import { toast } from "sonner";
 import { useCart } from "@/hooks/useCart";
 import appRoutes from "@/constants/appRoutes";
+import useDebounce from "@/hooks/useDebounce";
+import { useQuery } from "@tanstack/react-query";
+import { axiosInstance } from "@/services/axiosInstance";
+import apiEndpoints from "@/constants/apiEndpoints";
+import { Spinner } from "@/components/ui/spinner";
 
 function CartBadge({ count }: { count: number }) {
   const [animClass, setAnimClass] = useState("");
@@ -63,15 +68,20 @@ function CartBadge({ count }: { count: number }) {
   );
 }
 
-// User ID: a39c9db4-ad41-479b-8bb2-3d545ad4db1d
+interface SuggestionResult {
+  product_id: string;
+  product_slug: string;
+  product_name: string;
+  product_price: number;
+  category_name: string;
+  avgRating: string;
+}
 
 const Navbar = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
-  const { isLoading, data: cartData } = useCart();
-
-  // const cartData = { count: 0 };
+  const { data: cartData } = useCart();
 
   const dispatch = useAppDispatch();
   const { name } = useAppSelector((state) => state.auth);
@@ -97,6 +107,19 @@ const Navbar = () => {
     setSearchQuery("");
     setMobileSearchOpen(false);
   };
+
+  const debouncedQuery = useDebounce(searchQuery);
+
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ["search", debouncedQuery],
+    queryFn: async () => {
+      const response = await axiosInstance.get(
+        apiEndpoints.user.suggestProducts(debouncedQuery),
+      );
+      return response.data.products;
+    },
+    enabled: !!debouncedQuery && searchQuery.length >= 3,
+  });
 
   return (
     <nav className="fixed top-0 left-0 w-full z-50 bg-[#262626]/80 backdrop-blur-sm shadow-sm">
@@ -134,7 +157,22 @@ const Navbar = () => {
               className="w-[var(--radix-popover-trigger-width)] rounded-sm hidden md:block"
               onOpenAutoFocus={(e) => e.preventDefault()}
             >
-              Search results go here.
+              {isLoading ? (
+                <div className="flex items-center justify-center">
+                  <Spinner />
+                </div>
+              ) : isError ? (
+                <div>Error: {error.message}</div>
+              ) : data && data.length > 0 ? (
+                <div>
+                  {data.length} results: Convert this to
+                  ProductSuggestionListItem
+                </div>
+              ) : (
+                <div className="flex items-center justify-center">
+                  No Products found
+                </div>
+              )}
             </PopoverContent>
           </Popover>
         </div>
@@ -241,10 +279,25 @@ const Navbar = () => {
               </InputGroup>
             </PopoverTrigger>
             <PopoverContent
-              className="w-[var(--radix-popover-trigger-width)] rounded-sm"
+              className="w-[var(--radix-popover-trigger-width)] rounded-sm hidden md:block"
               onOpenAutoFocus={(e) => e.preventDefault()}
             >
-              Search results go here.
+              {isLoading ? (
+                <div className="flex items-center justify-center">
+                  <Spinner />
+                </div>
+              ) : isError ? (
+                <div>Error: {error.message}</div>
+              ) : data && data.length > 0 ? (
+                <div>
+                  {data.length} results: Convert this to
+                  ProductSuggestionListItem
+                </div>
+              ) : (
+                <div className="flex items-center justify-center">
+                  No Products found
+                </div>
+              )}
             </PopoverContent>
           </Popover>
         </div>

@@ -218,7 +218,7 @@ export class ProductService {
 
       const suggestions = await queryBuilder.getRawMany();
 
-      return suggestions.map((product: SuggestionResult) => ({
+      const products = suggestions.map((product: SuggestionResult) => ({
         id: product.product_id,
         slug: product.product_slug,
         name: product.product_name,
@@ -226,6 +226,10 @@ export class ProductService {
         price: product.product_price,
         averageRating: parseFloat(product.avgRating),
       }));
+
+      return {
+        products,
+      };
     } catch (error) {
       console.log(error);
       this.logger.error('Error in suggestProducts:', error);
