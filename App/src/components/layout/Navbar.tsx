@@ -68,15 +68,6 @@ function CartBadge({ count }: { count: number }) {
   );
 }
 
-interface SuggestionResult {
-  product_id: string;
-  product_slug: string;
-  product_name: string;
-  product_price: number;
-  category_name: string;
-  avgRating: string;
-}
-
 const Navbar = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);

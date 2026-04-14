@@ -179,6 +179,7 @@ export class ProductService {
       const queryBuilder = this.productRepo
         .createQueryBuilder('product')
         .innerJoin('product.category', 'category')
+        .innerJoin('product.images', 'images', 'images.is_primary = true')
         .leftJoin(
           '(' + ratingSubquery.getQuery() + ')',
           'rating',
@@ -190,6 +191,7 @@ export class ProductService {
           'product.name',
           'product.price',
           'category.name',
+          'images.url',
         ])
         .addSelect('COALESCE(rating."avgRating", 0)', 'avgRating')
         .orderBy('COALESCE(rating."avgRating", 0)', 'DESC')
@@ -211,6 +213,7 @@ export class ProductService {
         product_id: string;
         product_slug: string;
         product_name: string;
+        images_url: string;
         product_price: number;
         category_name: string;
         avgRating: string;
@@ -222,6 +225,7 @@ export class ProductService {
         id: product.product_id,
         slug: product.product_slug,
         name: product.product_name,
+        thumb: product.images_url,
         category: product.category_name,
         price: product.product_price,
         averageRating: parseFloat(product.avgRating),
