@@ -36,6 +36,9 @@ import { useQuery } from "@tanstack/react-query";
 import { axiosInstance } from "@/services/axiosInstance";
 import apiEndpoints from "@/constants/apiEndpoints";
 import { Spinner } from "@/components/ui/spinner";
+import { Item, ItemGroup } from "@/components/ui/item";
+import ProductSuggestionListItem from "@/components/ui/product-suggestion-list-item";
+import type { ProductSuggestion } from "@/types/ProductSuggestion";
 
 function CartBadge({ count }: { count: number }) {
   const [animClass, setAnimClass] = useState("");
@@ -101,7 +104,7 @@ const Navbar = () => {
 
   const debouncedQuery = useDebounce(searchQuery);
 
-  const { data, isLoading, isError, error } = useQuery({
+  const { data, isLoading, isFetching, isError, error } = useQuery({
     queryKey: ["search", debouncedQuery],
     queryFn: async () => {
       const response = await axiosInstance.get(
@@ -148,17 +151,29 @@ const Navbar = () => {
               className="w-[var(--radix-popover-trigger-width)] rounded-sm hidden md:block"
               onOpenAutoFocus={(e) => e.preventDefault()}
             >
-              {isLoading ? (
+              {isLoading || isFetching ? (
                 <div className="flex items-center justify-center">
                   <Spinner />
                 </div>
               ) : isError ? (
                 <div>Error: {error.message}</div>
               ) : data && data.length > 0 ? (
-                <div>
-                  {data.length} results: Convert this to
-                  ProductSuggestionListItem
-                </div>
+                <ItemGroup>
+                  {data.map((product: ProductSuggestion) => (
+                    <ProductSuggestionListItem
+                      {...product}
+                      key={product.slug}
+                    />
+                  ))}
+                  <Button key="redir-all" asChild className="rounded-sm">
+                    <Link
+                      to={appRoutes.user.search(searchQuery)}
+                      className="text-center"
+                    >
+                      View all results
+                    </Link>
+                  </Button>
+                </ItemGroup>
               ) : (
                 <div className="flex items-center justify-center">
                   No Products found
@@ -270,20 +285,32 @@ const Navbar = () => {
               </InputGroup>
             </PopoverTrigger>
             <PopoverContent
-              className="w-[var(--radix-popover-trigger-width)] rounded-sm hidden md:block"
+              className="w-[var(--radix-popover-trigger-width)] rounded-sm"
               onOpenAutoFocus={(e) => e.preventDefault()}
             >
-              {isLoading ? (
+              {isLoading || isFetching ? (
                 <div className="flex items-center justify-center">
                   <Spinner />
                 </div>
               ) : isError ? (
                 <div>Error: {error.message}</div>
               ) : data && data.length > 0 ? (
-                <div>
-                  {data.length} results: Convert this to
-                  ProductSuggestionListItem
-                </div>
+                <ItemGroup>
+                  {data.map((product: ProductSuggestion) => (
+                    <ProductSuggestionListItem
+                      {...product}
+                      key={product.slug}
+                    />
+                  ))}
+                  <Button key="redir-all" asChild className="rounded-sm">
+                    <Link
+                      to={appRoutes.user.search(searchQuery)}
+                      className="text-center"
+                    >
+                      View all results
+                    </Link>
+                  </Button>
+                </ItemGroup>
               ) : (
                 <div className="flex items-center justify-center">
                   No Products found
