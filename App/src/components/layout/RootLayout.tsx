@@ -5,11 +5,11 @@ import { Outlet } from "react-router";
 
 const RootLayout = () => {
   return (
-    <main className="overflow-hidden w-screen min-h-screen bg-[#F6F6F6] px-8">
+    <main className="overflow-hidden flex-col w-screen min-h-screen bg-[#F6F6F6]">
       <Navbar />
-      <div className="mt-16">
+      <main className="mt-16 flex-1 px-8">
         <Outlet />
-      </div>
+      </main>
       <Footer />
     </main>
   );

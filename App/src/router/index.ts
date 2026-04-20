@@ -5,6 +5,7 @@ import Register from "@/pages/Register";
 import Home from "@/pages/Home";
 import GuestRouteGuard from "@/router/GuestRouteGuard";
 import Login from "@/pages/Login";
+import NotFound from "@/pages/NotFound";
 
 export default createBrowserRouter([
   {
@@ -33,5 +34,9 @@ export default createBrowserRouter([
         ],
       },
     ],
+  },
+  {
+    path: "*",
+    Component: NotFound,
   },
 ]);

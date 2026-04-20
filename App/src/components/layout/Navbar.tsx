@@ -116,21 +116,24 @@ const Navbar = () => {
   });
 
   return (
-    <nav className="fixed top-0 left-0 w-full z-50 bg-[#262626]/80 backdrop-blur-sm shadow-sm">
+    <nav className="fixed top-0 left-0 w-full z-50 bg-zinc-950 backdrop-blur-sm shadow-sm">
       {/* Main bar */}
       <div className="flex items-center justify-between px-4 md:px-8 min-h-16 gap-4">
         {/* Logo */}
         <h1 className="font-bold text-2xl text-gray-300 shrink-0">
-          Shop<span className="text-indigo-400">Core</span>
+          Shop<span className="text-amber-400">Co</span>
         </h1>
 
         {/* Search — desktop only inline */}
         <div className="hidden md:block flex-1 max-w-lg">
           <Popover open={searchQuery.length >= 3}>
             <PopoverTrigger asChild>
-              <InputGroup className="rounded-sm w-full">
+              <InputGroup
+                className="rounded-sm w-full 
+              border-zinc-700 bg-zinc-800"
+              >
                 <InputGroupAddon align="inline-start">
-                  <SearchIcon className="text-slate-800" />
+                  <SearchIcon className="text-white" />
                 </InputGroupAddon>
                 <InputGroupInput
                   placeholder="Search products…"
@@ -140,7 +143,7 @@ const Navbar = () => {
                 {searchQuery && (
                   <InputGroupAddon align="inline-end">
                     <XCircleIcon
-                      className="cursor-pointer text-slate-800"
+                      className="cursor-pointer text-white"
                       onClick={clearSearch}
                     />
                   </InputGroupAddon>
@@ -266,7 +269,7 @@ const Navbar = () => {
             <PopoverTrigger asChild>
               <InputGroup className="rounded-sm w-full">
                 <InputGroupAddon align="inline-start">
-                  <SearchIcon className="text-slate-800" />
+                  <SearchIcon className="text-white" />
                 </InputGroupAddon>
                 <InputGroupInput
                   placeholder="Search products…"
@@ -277,7 +280,7 @@ const Navbar = () => {
                 {searchQuery && (
                   <InputGroupAddon align="inline-end">
                     <XCircleIcon
-                      className="cursor-pointer text-slate-800"
+                      className="cursor-pointer text-white"
                       onClick={clearSearch}
                     />
                   </InputGroupAddon>

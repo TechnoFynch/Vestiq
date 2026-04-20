@@ -7,7 +7,7 @@ const AuthLayout = () => {
       <section className="grid grid-cols-1 md:grid-cols-2 w-full max-w-4xl shadow-sm">
         <div className="hidden md:flex flex-col items-start justify-between gap-8 bg-slate-900 p-8 rounded-l-lg">
           <h1 className="font-bold text-4xl text-gray-300">
-            Shop<span className="font-bold text-4xl text-indigo-400">Core</span>
+            Shop<span className="font-bold text-4xl text-amber-400">Co</span>
           </h1>
           <div>
             <p className="text-gray-100 text-2xl">

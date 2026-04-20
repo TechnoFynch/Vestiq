@@ -145,7 +145,7 @@ const Register = () => {
   return (
     <section className="bg-[#f6f6f6] w-full h-full rounded-r-lg p-8">
       <h1 className="md:hidden font-bold text-4xl text-gray-300">
-        Shop<span className="font-bold text-4xl text-indigo-400">Core</span>
+        Shop<span className="font-bold text-4xl text-amber-400">Co</span>
       </h1>
       <h2 className="text-2xl font-semibold mt-4">Create your account</h2>
       <p className="text-gray-700">
