@@ -139,6 +139,7 @@ const Navbar = () => {
                   placeholder="Search products…"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  className="text-white"
                 />
                 {searchQuery && (
                   <InputGroupAddon align="inline-end">
@@ -276,6 +277,7 @@ const Navbar = () => {
                   autoFocus
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  className="text-white"
                 />
                 {searchQuery && (
                   <InputGroupAddon align="inline-end">
