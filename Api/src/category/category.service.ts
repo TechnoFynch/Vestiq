@@ -32,16 +32,20 @@ export class CategoryService {
     }
   }
 
-  async findAll() {
+  async findAll(parentId?: string) {
     try {
-      const categories = await this.categoryRepo.find({
-        relations: ['parent', 'children'],
-        order: {
-          name: 'ASC',
-        },
-      });
+      const query = this.categoryRepo.createQueryBuilder('category');
 
-      return categories;
+      if (!parentId) {
+        query.where('category.parent IS NULL');
+      } else if (parentId) {
+        // Subcategories
+        query.where('category.parent = :parentId', { parentId });
+      }
+
+      const categories = await query.getMany();
+
+      return { categories };
     } catch (error) {
       this.logger.error('Error fetching categories:', error);
       throw new InternalServerErrorException('Failed to fetch categories');

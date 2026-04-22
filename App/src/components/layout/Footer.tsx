@@ -1,9 +1,5 @@
 import { Link } from "react-router";
 import {
-  Instagram,
-  Twitter,
-  Facebook,
-  Youtube,
   ShieldCheck,
   RefreshCcw,
   BadgeCheck,
@@ -15,6 +11,8 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useState } from "react";
+import { FaInstagram } from "react-icons/fa";
+import { FaTwitter, FaFacebook, FaYoutube } from "react-icons/fa6";
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
@@ -50,10 +48,10 @@ const LINKS = {
 };
 
 const SOCIALS = [
-  { icon: Instagram, label: "Instagram", href: "https://instagram.com" },
-  { icon: Twitter, label: "Twitter / X", href: "https://twitter.com" },
-  { icon: Facebook, label: "Facebook", href: "https://facebook.com" },
-  { icon: Youtube, label: "YouTube", href: "https://youtube.com" },
+  { icon: FaInstagram, label: "Instagram", href: "https://instagram.com" },
+  { icon: FaTwitter, label: "Twitter / X", href: "https://twitter.com" },
+  { icon: FaFacebook, label: "Facebook", href: "https://facebook.com" },
+  { icon: FaYoutube, label: "YouTube", href: "https://youtube.com" },
 ];
 
 const TRUST = [

@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { CategoryService } from './category.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
@@ -26,11 +27,17 @@ export class CategoryController {
     return this.categoryService.create(createCategoryDto);
   }
 
+  // TODO: Move to Admin Route
+  // @Get()
+  // @ApiBearerAuth('access-token')
+  // @UseGuards(JwtAuthGuard, AdminGuard)
+  // findAll() {
+  //   return this.categoryService.findAll();
+  // }
+
   @Get()
-  @ApiBearerAuth('access-token')
-  @UseGuards(JwtAuthGuard, AdminGuard)
-  findAll() {
-    return this.categoryService.findAll();
+  findAll(@Query('parentId') parentId?: string) {
+    return this.categoryService.findAll(parentId);
   }
 
   @Get(':id')
