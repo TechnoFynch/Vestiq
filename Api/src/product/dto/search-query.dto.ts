@@ -33,6 +33,10 @@ export class SearchQueryDto {
   @IsString()
   category?: string;
 
+  @IsOptional()
+  @IsString()
+  brand?: string;
+
   // 💰 Price filters
   @IsOptional()
   @Type(() => Number)

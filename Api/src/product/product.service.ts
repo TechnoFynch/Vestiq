@@ -29,6 +29,7 @@ export class ProductService {
       sortType,
       productRatingMax,
       productRatingMin,
+      brand,
       limit = 10,
       page = 1,
     } = searchQueryDto;
@@ -58,14 +59,16 @@ export class ProductService {
 
       const queryBuilder = this.productRepo
         .createQueryBuilder('product')
-        .innerJoin('product.category', 'category');
+        .innerJoin('product.category', 'category')
+        .leftJoin('product.brand', 'brand');
 
       if (query) {
         queryBuilder.andWhere(
           new Brackets((qb) => {
             qb.where('product.name ILIKE :search')
               .orWhere('category.name ILIKE :search')
-              .orWhere('product.description ILIKE :search');
+              .orWhere('product.description ILIKE :search')
+              .orWhere('brand.name ILIKE :search');
           }),
           { search: `%${query}%` },
         );
@@ -77,6 +80,10 @@ export class ProductService {
             qb.where('category.slug = :category', { category });
           }),
         );
+      }
+
+      if (brand) {
+        queryBuilder.andWhere('brand.slug = :brand', { brand });
       }
 
       if (priceMin) {
@@ -136,6 +143,9 @@ export class ProductService {
           'product.sale_price',
           'category.name',
           'category.slug',
+          'brand.id',
+          'brand.name',
+          'brand.slug',
           'images.url',
           'images.is_primary',
         ])

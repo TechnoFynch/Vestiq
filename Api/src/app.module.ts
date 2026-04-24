@@ -14,6 +14,7 @@ import { CartModule } from './cart/cart.module';
 import { AddressModule } from './address/address.module';
 import { OrderModule } from './order/order.module';
 import { ProductRatingModule } from './product-rating/product-rating.module';
+import { BrandModule } from './brand/brand.module';
 
 @Module({
   imports: [
@@ -80,6 +81,8 @@ import { ProductRatingModule } from './product-rating/product-rating.module';
     OrderModule,
 
     ProductRatingModule,
+
+    BrandModule,
   ],
 })
 export class AppModule {}
