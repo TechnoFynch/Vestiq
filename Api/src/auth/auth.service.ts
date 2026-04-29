@@ -134,9 +134,18 @@ export class AuthService {
         relations: ['profile'],
       });
 
+      if (!user) {
+        throw new BadRequestException('User not found');
+      }
+
       return user;
     } catch (error) {
       this.logger.error(error);
+
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+
       throw new InternalServerErrorException('Something went wrong.');
     }
   }

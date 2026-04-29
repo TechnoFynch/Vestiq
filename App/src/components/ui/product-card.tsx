@@ -1,6 +1,76 @@
 import { Card } from "@/components/ui/card";
 import type { ProductCardType } from "@/types/ProductCardType";
 
+import { Star } from "lucide-react";
+
+interface RatingBarProps {
+  avgRating: number;
+  voteCount?: number;
+  size?: number;
+  showScore?: boolean;
+  showVotes?: boolean;
+}
+
+const RatingBar = ({
+  avgRating,
+  voteCount = 0,
+  size = 20,
+  showScore = true,
+  showVotes = true,
+}: RatingBarProps) => {
+  const clamped = Math.min(5, Math.max(0, avgRating));
+
+  return (
+    <div className="flex items-center gap-2">
+      {showScore && (
+        <span className="text-sm font-semibold text-foreground min-w-[28px]">
+          {clamped.toFixed(1)}
+        </span>
+      )}
+      <div className="flex gap-0.5">
+        {[1, 2, 3, 4, 5].map((star) => {
+          const fillPercent = Math.min(
+            100,
+            Math.max(0, (clamped - (star - 1)) * 100),
+          );
+          return (
+            <div
+              key={star}
+              className="relative"
+              style={{ width: size, height: size }}
+            >
+              {/* Empty star */}
+              <Star
+                size={size}
+                className="text-muted-foreground/30"
+                strokeWidth={1.5}
+              />
+              {/* Filled overlay */}
+              <div
+                className="absolute inset-0 overflow-hidden"
+                style={{ width: `${fillPercent}%` }}
+              >
+                <Star
+                  size={size}
+                  className="text-yellow-400 fill-yellow-400"
+                  strokeWidth={1.5}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {showVotes && (
+        <span className="text-xs text-muted-foreground">
+          ({voteCount.toLocaleString()})
+        </span>
+      )}
+    </div>
+  );
+};
+
+export default RatingBar;
+
 const ProductCardType = (props: ProductCardType) => {
   return (
     <Card className="relative mx-auto w-full max-w-sm pt-0" size="sm">

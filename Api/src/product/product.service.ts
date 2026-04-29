@@ -9,6 +9,7 @@ import { Brackets, Repository } from 'typeorm';
 import { Product } from './entities/product.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { SearchQueryDto } from './dto/search-query.dto';
+import { AuthService } from 'src/auth/auth.service';
 
 @Injectable()
 export class ProductService {
@@ -17,9 +18,13 @@ export class ProductService {
   constructor(
     @InjectRepository(Product)
     private readonly productRepo: Repository<Product>,
+    private readonly authService: AuthService,
   ) {}
 
-  public async searchProducts(searchQueryDto: SearchQueryDto) {
+  public async searchProducts(
+    searchQueryDto: SearchQueryDto,
+    userId: string | undefined,
+  ) {
     const {
       query,
       category,
@@ -33,12 +38,6 @@ export class ProductService {
       limit = 10,
       page = 1,
     } = searchQueryDto;
-
-    if (!query && !category) {
-      throw new BadRequestException(
-        'Either search query or category is required.',
-      );
-    }
 
     try {
       if (priceMin && priceMax && priceMax < priceMin) {
@@ -57,11 +56,58 @@ export class ProductService {
         );
       }
 
+      let validatedUserId: string | undefined = undefined;
+      if (userId) {
+        const user = await this.authService.findById(userId);
+        if (user) validatedUserId = userId;
+      }
+
+      const ratingSubquery = this.productRepo.manager
+        .createQueryBuilder()
+        .select('pr.productId', 'productId')
+        .addSelect('ROUND(AVG(pr.rating), 2)', 'avgRating')
+        .from('product_rating', 'pr')
+        .groupBy('pr."productId"')
+        .getQuery();
+
+      const voteCountSubquery = this.productRepo.manager
+        .createQueryBuilder()
+        .select('pr.productId', 'productId')
+        .addSelect('COUNT(pr.id)', 'voteCount')
+        .from('product_rating', 'pr')
+        .groupBy('pr."productId"')
+        .getQuery();
+
       const queryBuilder = this.productRepo
         .createQueryBuilder('product')
         .innerJoin('product.category', 'category')
-        .leftJoin('product.brand', 'brand');
+        .leftJoin('product.brand', 'brand')
+        .leftJoin('product.inventory', 'stock')
+        .leftJoin('product.images', 'images')
+        .leftJoin(
+          `(${ratingSubquery})`,
+          'rating',
+          'rating."productId" = product.id',
+        )
+        .leftJoin(
+          `(${voteCountSubquery})`,
+          'votes',
+          'votes."productId" = product.id',
+        );
 
+      if (validatedUserId) {
+        queryBuilder.leftJoin(
+          'wishlist',
+          'wishlist',
+          'wishlist."productId" = product.id AND wishlist."userId" = :validatedUserId',
+          { validatedUserId },
+        );
+      }
+
+      // stock filter
+      queryBuilder.andWhere('stock.quantity - stock.reserved > 0');
+
+      // full text search
       if (query) {
         queryBuilder.andWhere(
           new Brackets((qb) => {
@@ -75,11 +121,7 @@ export class ProductService {
       }
 
       if (category) {
-        queryBuilder.andWhere(
-          new Brackets((qb) => {
-            qb.where('category.slug = :category', { category });
-          }),
-        );
+        queryBuilder.andWhere('category.slug = :category', { category });
       }
 
       if (brand) {
@@ -109,32 +151,18 @@ export class ProductService {
       }
 
       if (productRatingMin) {
-        queryBuilder.andWhere('product.product_rating >= :minRating', {
+        queryBuilder.andWhere('COALESCE(rating."avgRating", 0) >= :minRating', {
           minRating: productRatingMin,
         });
       }
 
       if (productRatingMax) {
-        queryBuilder.andWhere('product.product_rating <= :maxRating', {
+        queryBuilder.andWhere('COALESCE(rating."avgRating", 0) <= :maxRating', {
           maxRating: productRatingMax,
         });
       }
 
-      const ratingSubquery = queryBuilder
-        .subQuery()
-        .select('pr.productId', 'productId')
-        .addSelect('ROUND(AVG(pr.rating), 2)', 'avgRating')
-        .from('product_rating', 'pr')
-        .groupBy('pr."productId"');
-
-      const qb = queryBuilder
-        .leftJoin('product.images', 'images')
-        .leftJoin('product.inventory', 'stock')
-        .leftJoin(
-          '(' + ratingSubquery.getQuery() + ')',
-          'rating',
-          'rating."productId" = product.id',
-        )
+      queryBuilder
         .select([
           'product.id',
           'product.name',
@@ -143,26 +171,38 @@ export class ProductService {
           'product.sale_price',
           'category.name',
           'category.slug',
-          'brand.id',
           'brand.name',
           'brand.slug',
           'images.url',
-          'images.is_primary',
         ])
         .addSelect('stock.quantity - stock.reserved', 'remainingStock')
         .addSelect('COALESCE(rating."avgRating", 0)', 'avgRating')
-        .take(limit)
-        .skip((page - 1) * limit);
+        .addSelect('COALESCE(votes."voteCount", 0)', 'voteCount')
+        .addSelect(
+          validatedUserId
+            ? 'CASE WHEN wishlist."productId" IS NOT NULL THEN true ELSE false END'
+            : 'false',
+          'isWishlisted',
+        )
+        .limit(limit)
+        .offset((page - 1) * limit);
+
+      if (sortBy) {
+        queryBuilder.orderBy(
+          sortBy === 'price' ? 'product.price' : 'product.name',
+          sortType ?? 'ASC',
+        );
+      }
 
       const [products, totalCount] = await Promise.all([
-        qb.getRawMany(),
-        qb.getCount(),
+        queryBuilder.getRawMany(),
+        queryBuilder.getCount(),
       ]);
 
       return {
-        data: products,
+        products,
         total: totalCount,
-        limit: limit,
+        limit,
         offset: (page - 1) * limit,
       };
     } catch (error) {

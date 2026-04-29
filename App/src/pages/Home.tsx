@@ -237,7 +237,7 @@ const CategoryScroller = () => {
           className="pl-3"
         >
           <Link
-            to={appRoutes.user.productsByCategory(category.slug)}
+            to={appRoutes.user.products({ category: category.slug })}
             className="group flex flex-col gap-2.5 rounded-xl border border-border bg-background p-4 h-full
                        hover:border-foreground/20 hover:bg-accent/40 transition-colors duration-150"
           >
@@ -284,18 +284,17 @@ const CategoryScroller = () => {
 };
 
 const Home = () => {
-  const sampleProducts: ProductCardType[] = [
-    {
-      id: "TestUUID",
-      name: "Test PRoduct",
-      slug: "test-product",
-      image: "img-url",
-      rating: 4.5,
-      price: 100,
-      addedToWishlist: true,
-      category: "tst category",
-    },
-  ];
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ["products"],
+    queryFn: () =>
+      axiosInstance.get(
+        apiEndpoints.user.searchProducts({
+          limit: 5,
+          page: 1,
+          productRatingMin: 4,
+        }),
+      ),
+  });
   return (
     <div>
       <HeroSection />
@@ -307,9 +306,10 @@ const Home = () => {
       </div>
       <div className="flex-col items-start justify-start gap-4">
         <h1>Explore top products</h1>
-        {sampleProducts.map((product) => (
-          <ProductCard {...product} />
-        ))}
+        {data &&
+          data.data.products.map((product: ProductCardType) => (
+            <ProductCard {...product} />
+          ))}
       </div>
     </div>
   );

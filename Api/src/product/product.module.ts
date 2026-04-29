@@ -9,6 +9,7 @@ import { InventoryModule } from 'src/inventory/inventory.module';
 import { ConfigModule } from '@nestjs/config';
 import { ProductController } from './product.controller';
 import { ProductService } from './product.service';
+import { AuthModule } from 'src/auth/auth.module';
 
 @Module({
   controllers: [ProductAdminController, ProductController],
@@ -17,6 +18,7 @@ import { ProductService } from './product.service';
     TypeOrmModule.forFeature([Product, ProductImage]),
     forwardRef(() => InventoryModule),
     ConfigModule,
+    AuthModule,
   ],
   exports: [ProductService],
 })
