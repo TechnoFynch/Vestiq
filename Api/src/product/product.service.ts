@@ -72,10 +72,18 @@ export class ProductService {
 
       const voteCountSubquery = this.productRepo.manager
         .createQueryBuilder()
-        .select('pr.productId', 'productId')
+        .select('pr.product_id', 'productId')
         .addSelect('COUNT(pr.id)', 'voteCount')
         .from('product_rating', 'pr')
-        .groupBy('pr."productId"')
+        .groupBy('pr."product_id"')
+        .getQuery();
+
+      const primaryImageSubquery = this.productRepo.manager
+        .createQueryBuilder()
+        .select('img.product_id', 'product_id')
+        .addSelect('img.url', 'url')
+        .from('product_image', 'img')
+        .where('img.is_primary = true')
         .getQuery();
 
       const queryBuilder = this.productRepo
@@ -83,7 +91,11 @@ export class ProductService {
         .innerJoin('product.category', 'category')
         .leftJoin('product.brand', 'brand')
         .leftJoin('product.inventory', 'stock')
-        .leftJoin('product.images', 'images')
+        .leftJoin(
+          `(${primaryImageSubquery})`,
+          'primary_image',
+          'primary_image.product_id = product.id',
+        )
         .leftJoin(
           `(${ratingSubquery})`,
           'rating',
@@ -173,8 +185,8 @@ export class ProductService {
           'category.slug',
           'brand.name',
           'brand.slug',
-          'images.url',
         ])
+        .addSelect('primary_image.url', 'imageUrl')
         .addSelect('stock.quantity - stock.reserved', 'remainingStock')
         .addSelect('COALESCE(rating."avgRating", 0)', 'avgRating')
         .addSelect('COALESCE(votes."voteCount", 0)', 'voteCount')

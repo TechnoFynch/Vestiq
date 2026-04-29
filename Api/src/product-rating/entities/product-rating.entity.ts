@@ -5,6 +5,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -30,6 +31,7 @@ export class ProductRating {
   rating!: number;
 
   @ManyToOne(() => Auth, (user) => user.product_ratings)
+  @JoinColumn({ name: 'user_id' })
   user!: Auth;
 
   @ManyToOne(() => Product, (product) => product.product_rating)

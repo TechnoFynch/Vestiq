@@ -83,7 +83,7 @@ export class Product {
   product_rating?: ProductRating[];
 
   @ManyToOne(() => Brand, (brand) => brand.products)
-  @JoinColumn()
+  @JoinColumn({ name: 'brand_id' })
   brand!: Brand;
 
   @CreateDateColumn()
