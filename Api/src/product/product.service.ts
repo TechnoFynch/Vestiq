@@ -64,18 +64,11 @@ export class ProductService {
 
       const ratingSubquery = this.productRepo.manager
         .createQueryBuilder()
-        .select('pr.productId', 'productId')
+        .select('pr.product_id', 'product_id')
         .addSelect('ROUND(AVG(pr.rating), 2)', 'avgRating')
-        .from('product_rating', 'pr')
-        .groupBy('pr."productId"')
-        .getQuery();
-
-      const voteCountSubquery = this.productRepo.manager
-        .createQueryBuilder()
-        .select('pr.product_id', 'productId')
         .addSelect('COUNT(pr.id)', 'voteCount')
         .from('product_rating', 'pr')
-        .groupBy('pr."product_id"')
+        .groupBy('pr.product_id')
         .getQuery();
 
       const primaryImageSubquery = this.productRepo.manager
@@ -99,19 +92,14 @@ export class ProductService {
         .leftJoin(
           `(${ratingSubquery})`,
           'rating',
-          'rating."productId" = product.id',
-        )
-        .leftJoin(
-          `(${voteCountSubquery})`,
-          'votes',
-          'votes."productId" = product.id',
+          'rating."product_id" = product.id',
         );
 
       if (validatedUserId) {
         queryBuilder.leftJoin(
           'wishlist',
           'wishlist',
-          'wishlist."productId" = product.id AND wishlist."userId" = :validatedUserId',
+          'wishlist."product_id" = product.id AND wishlist."user_id" = :validatedUserId',
           { validatedUserId },
         );
       }
@@ -189,10 +177,10 @@ export class ProductService {
         .addSelect('primary_image.url', 'imageUrl')
         .addSelect('stock.quantity - stock.reserved', 'remainingStock')
         .addSelect('COALESCE(rating."avgRating", 0)', 'avgRating')
-        .addSelect('COALESCE(votes."voteCount", 0)', 'voteCount')
+        .addSelect('COALESCE(rating."voteCount", 0)', 'voteCount')
         .addSelect(
           validatedUserId
-            ? 'CASE WHEN wishlist."productId" IS NOT NULL THEN true ELSE false END'
+            ? 'CASE WHEN wishlist."product_id" IS NOT NULL THEN true ELSE false END'
             : 'false',
           'isWishlisted',
         )
@@ -233,10 +221,10 @@ export class ProductService {
       const ratingSubquery = this.productRepo
         .createQueryBuilder('product')
         .subQuery()
-        .select('pr.productId', 'productId')
+        .select('pr.product_id', 'product_id')
         .addSelect('ROUND(AVG(pr.rating), 2)', 'avgRating')
         .from('product_rating', 'pr')
-        .groupBy('pr."productId"');
+        .groupBy('pr."product_id"');
 
       const queryBuilder = this.productRepo
         .createQueryBuilder('product')

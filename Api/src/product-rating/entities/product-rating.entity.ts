@@ -35,6 +35,7 @@ export class ProductRating {
   user!: Auth;
 
   @ManyToOne(() => Product, (product) => product.product_rating)
+  @JoinColumn({ name: 'product_id' })
   product!: Product;
 
   @CreateDateColumn()
