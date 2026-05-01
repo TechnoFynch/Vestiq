@@ -3,7 +3,7 @@ export default {
     login: "/login",
     register: "/register",
     home: "/",
-    product: (slug: string) => `/products/${slug}`,
+    products: (slug: string) => `/products/${slug}`,
     search: "/products/search",
   },
 };

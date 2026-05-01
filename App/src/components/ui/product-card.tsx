@@ -23,7 +23,7 @@ const RatingBar = ({
   return (
     <div className="flex items-center gap-2">
       {showScore && (
-        <span className="text-sm font-semibold text-foreground min-w-[28px]">
+        <span className="text-sm font-semibold text-foreground min-w-7">
           {clamped.toFixed(1)}
         </span>
       )}
@@ -69,27 +69,27 @@ const RatingBar = ({
   );
 };
 
-export default RatingBar;
-
 const ProductCardType = (props: ProductCardType) => {
   return (
     <Card className="relative mx-auto w-full max-w-sm pt-0" size="sm">
       {/* Product Image */}
-      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-t-2xl">
+      <div className="relative aspect-4/3 w-full overflow-hidden rounded-t-2xl">
         <img
-          src={props.image}
-          alt={props.name}
+          src={props.images_url}
+          alt={props.product_name}
           className="h-full w-full object-cover"
         />
       </div>
 
       {/* Product Info */}
       <div className="p-4">
-        <h3 className="text-lg font-semibold text-foreground">{props.name}</h3>
-        <p className="text-sm text-muted-foreground">{props.category}</p>
+        <h3 className="text-lg font-semibold text-foreground">
+          {props.product_name}
+        </h3>
+        <p className="text-sm text-muted-foreground">{props.category_name}</p>
         <div className="mt-2 flex items-center justify-between">
           <span className="text-lg font-bold text-foreground">
-            ${props.price.toFixed(2)}
+            ${props.product_price.toFixed(2)}
           </span>
           <button className="rounded-full bg-primary p-2 text-primary-foreground hover:bg-primary/90">
             <svg

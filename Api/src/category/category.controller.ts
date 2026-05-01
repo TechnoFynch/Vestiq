@@ -14,7 +14,7 @@ import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { AdminGuard } from 'src/guards/admin.guard';
 import { JwtAuthGuard } from 'src/guards/auth.guard';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 
 @Controller('category')
 export class CategoryController {
@@ -36,6 +36,7 @@ export class CategoryController {
   // }
 
   @Get()
+  @ApiQuery({ name: 'parentId', required: false, type: String })
   findAll(@Query('parentId') parentId?: string) {
     return this.categoryService.findAll(parentId);
   }

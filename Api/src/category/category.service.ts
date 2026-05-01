@@ -43,11 +43,13 @@ export class CategoryService {
         query.where('category.parent = :parentId', { parentId });
       }
 
-      const categories = await query.getMany();
+      const categories = await query
+        .select(['category.id', 'category.name', 'category.slug'])
+        .getMany();
 
       return { categories };
     } catch (error) {
-      this.logger.error('Error fetching categories:', error);
+      this.logger.error(error);
       throw new InternalServerErrorException('Failed to fetch categories');
     }
   }

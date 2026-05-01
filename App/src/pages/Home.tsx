@@ -237,7 +237,7 @@ const CategoryScroller = () => {
           className="pl-3"
         >
           <Link
-            to={appRoutes.user.products({ category: category.slug })}
+            to={appRoutes.user.products(category.slug)}
             className="group flex flex-col gap-2.5 rounded-xl border border-border bg-background p-4 h-full
                        hover:border-foreground/20 hover:bg-accent/40 transition-colors duration-150"
           >
