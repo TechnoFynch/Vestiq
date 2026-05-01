@@ -3,7 +3,7 @@ export default {
   login: "/auth/login",
   user: {
     getCart: "/cart",
-    suggestProducts: (query: string) => `/product/suggest?query=${query}`,
+    suggestProducts: (query: string) => `/products/suggest?query=${query}`,
     getCategories: (parentId?: string) =>
       `/category?parent_id=${parentId ? `${parentId}` : "null"}`,
     searchProducts: (filters?: {
@@ -19,7 +19,7 @@ export default {
       page?: number;
       limit?: number;
     }) => {
-      if (!filters) return "/products";
+      if (!filters) return "/products/search";
       const params = new URLSearchParams();
       if (filters.query) params.set("q", filters.query);
       if (filters.category) params.set("category", filters.category);
@@ -35,7 +35,8 @@ export default {
       if (filters.page) params.set("page", String(filters.page));
       if (filters.limit) params.set("limit", String(filters.limit));
       const qs = params.toString();
-      return `/products${qs ? `?${qs}` : ""}`;
+      return `/products/search${qs ? `?${qs}` : ""}`;
     },
+    addToWishlist: (productId: string) => "/wishlist/addItem",
   },
 };

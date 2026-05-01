@@ -9,9 +9,9 @@ export interface ProductCardType {
   brand_id: string;
   brand_name: string;
   brand_slug: string;
-  images_url: string;
+  imageUrl: string;
   remainingStock: number;
   avgRating: number;
-  totalVotes: number;
+  voteCount: number;
   isWishlisted: boolean;
 }

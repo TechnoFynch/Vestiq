@@ -5,7 +5,7 @@ import { ProductService } from './product.service';
 import { ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { OptionalAuthGuard } from 'src/guards/optional-auth.guard';
 
-@Controller('product')
+@Controller('products')
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
 

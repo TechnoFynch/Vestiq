@@ -1,7 +1,16 @@
-import { Card } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import type { ProductCardType } from "@/types/ProductCardType";
 
-import { Star } from "lucide-react";
+import { HeartIcon, Star } from "lucide-react";
+import { Badge } from "./badge";
+import { Link } from "react-router";
+import appRoutes from "@/constants/appRoutes";
 
 interface RatingBarProps {
   avgRating: number;
@@ -14,7 +23,7 @@ interface RatingBarProps {
 const RatingBar = ({
   avgRating,
   voteCount = 0,
-  size = 20,
+  size = 10,
   showScore = true,
   showVotes = true,
 }: RatingBarProps) => {
@@ -71,45 +80,74 @@ const RatingBar = ({
 
 const ProductCardType = (props: ProductCardType) => {
   return (
-    <Card className="relative mx-auto w-full max-w-sm pt-0" size="sm">
-      {/* Product Image */}
-      <div className="relative aspect-4/3 w-full overflow-hidden rounded-t-2xl">
-        <img
-          src={props.images_url}
-          alt={props.product_name}
-          className="h-full w-full object-cover"
-        />
-      </div>
-
-      {/* Product Info */}
-      <div className="p-4">
-        <h3 className="text-lg font-semibold text-foreground">
-          {props.product_name}
-        </h3>
-        <p className="text-sm text-muted-foreground">{props.category_name}</p>
-        <div className="mt-2 flex items-center justify-between">
-          <span className="text-lg font-bold text-foreground">
-            ${props.product_price.toFixed(2)}
-          </span>
-          <button className="rounded-full bg-primary p-2 text-primary-foreground hover:bg-primary/90">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.3-4.3" />
-            </svg>
-          </button>
+    <Link to={appRoutes.user.products(props.product_slug)}>
+      <Card
+        className="relative mx-auto w-full max-w-sm pt-0! cursor-pointer"
+        size="sm"
+      >
+        {/* Product Image */}
+        <div className="relative aspect-4/3 w-full overflow-hidden rounded-t-2xl">
+          <img
+            src={props.imageUrl}
+            alt={props.product_name}
+            className="h-full w-full object-cover"
+          />
+          <div
+            className="absolute top-4 right-4 flex items-center justify-center 
+             h-9 w-9 rounded-full 
+             bg-white/90 backdrop-blur 
+             border border-slate-200 
+             shadow-sm
+             hover:bg-white hover:shadow-md 
+             transition-all duration-200 
+             active:scale-95 cursor-pointer"
+          >
+            <HeartIcon
+              className={`h-4 w-4 ${props.isWishlisted ? "text-pink-400 fill-pink-400" : "text-slate-600"}`}
+            />
+          </div>
         </div>
-      </div>
-    </Card>
+
+        {/* Product Info */}
+        <CardHeader className="p-4">
+          <RatingBar avgRating={props.avgRating} voteCount={props.voteCount} />
+          <CardTitle className="text-lg font-semibold text-foreground">
+            {props.product_name}
+          </CardTitle>
+          <CardDescription>
+            <p className="text-sm text-muted-foreground capitalize">
+              {props.brand_name}
+            </p>
+            <div className="mt-2 flex items-center justify-between">
+              {props.product_sale_price ? (
+                <div className="flex items-center justify-start gap-1">
+                  <span className="text-base line-through font-semibold text-foreground/70">
+                    ${props.product_price}
+                  </span>{" "}
+                  <span className="text-lg font-semibold text-foreground">
+                    ${props.product_sale_price}
+                  </span>
+                  <Badge
+                    variant="destructive"
+                    className="text-xs rounded-sm ml-2"
+                  >
+                    {`-${(
+                      ((props.product_price - props.product_sale_price) /
+                        props.product_price) *
+                      100
+                    ).toFixed(0)}%`}
+                  </Badge>
+                </div>
+              ) : (
+                <span className="text-lg font-semibold text-foreground">
+                  ${props.product_price}
+                </span>
+              )}
+            </div>
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    </Link>
   );
 };
 

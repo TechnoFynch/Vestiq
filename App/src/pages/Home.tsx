@@ -289,7 +289,7 @@ const Home = () => {
     queryFn: () =>
       axiosInstance.get(
         apiEndpoints.user.searchProducts({
-          limit: 5,
+          limit: 4,
           page: 1,
           productRatingMin: 4,
         }),
@@ -305,11 +305,19 @@ const Home = () => {
         <CategoryScroller />
       </div>
       <div className="flex-col items-start justify-start gap-4">
-        <h1>Explore top products</h1>
-        {data &&
-          data.data.products.map((product: ProductCardType) => (
-            <ProductCard {...product} />
-          ))}
+        <h1 className="text-xl font-semibold mt-4 flex items-center gap-2">
+          Explore top products <ArrowRightIcon />
+        </h1>
+        <div className="flex items-center justify-around gap-4 mt-4">
+          {isLoading ? (
+            <Spinner />
+          ) : (
+            data &&
+            data.data.products.map((product: ProductCardType) => (
+              <ProductCard {...product} />
+            ))
+          )}
+        </div>
       </div>
     </div>
   );
