@@ -47,6 +47,7 @@ import { GiBootKick, GiDress, GiTrousers, GiBelt } from "react-icons/gi";
 import appRoutes from "@/constants/appRoutes";
 import type { ProductCardType } from "@/types/ProductCardType";
 import ProductCard from "@/components/ui/product-card";
+import { useAppSelector } from "@/hooks/redux";
 
 const HeroSection = () => {
   return (
@@ -284,6 +285,8 @@ const CategoryScroller = () => {
 };
 
 const Home = () => {
+  const user = useAppSelector((state) => state.auth.name);
+
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["products"],
     queryFn: () =>
@@ -299,24 +302,89 @@ const Home = () => {
     <div>
       <HeroSection />
       <div className="flex-col items-start justify-start gap-2">
-        <h1 className="text-xl font-semibold mt-4 flex items-center gap-2">
-          Browse by Category <ArrowRightIcon />
-        </h1>
+        <div className="flex items-center justify-between px-4 md:px-8 mt-4 ">
+          <h1 className="text-xl font-semibold">Browse by Category</h1>
+          <Button
+            asChild
+            variant="link"
+            className="text-base flex items-center justify-start gap-2"
+          >
+            <Link to="">
+              View All <ArrowRightIcon className="w-4 h-4" />
+            </Link>
+          </Button>
+        </div>
         <CategoryScroller />
       </div>
       <div className="flex-col items-start justify-start gap-4">
-        <h1 className="text-xl font-semibold mt-4 flex items-center gap-2">
-          Explore top products <ArrowRightIcon />
-        </h1>
-        <div className="flex items-center justify-around gap-4 mt-4">
+        <div className="flex items-center justify-between px-4 md:px-8 mt-4 ">
+          <h1 className="text-xl font-semibold">Explore Top Products</h1>
+          <Button
+            asChild
+            variant="link"
+            className="text-base flex items-center justify-start gap-2"
+          >
+            <Link to="">
+              View All <ArrowRightIcon className="w-4 h-4" />
+            </Link>
+          </Button>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 px-8 md:px-2">
           {isLoading ? (
             <Spinner />
           ) : (
             data &&
             data.data.products.map((product: ProductCardType) => (
-              <ProductCard {...product} />
+              <ProductCard {...product} key={product.product_id} />
             ))
           )}
+        </div>
+      </div>
+      <div className="my-4 px-4 md:px-6">
+        <div
+          className={`grid grid-cols-1 ${!user ? "md:grid-cols-2" : ""} gap-3`}
+        >
+          {/* Members card */}
+          {!user && (
+            <div className="bg-indigo-100 rounded-xl flex items-center justify-between px-6 py-5">
+              <div className="flex flex-col gap-1">
+                <span className="text-xs text-indigo-500 font-medium">
+                  Members only
+                </span>
+                <span className="text-lg font-bold text-gray-800">
+                  Extra 10% off sitewide
+                </span>
+                <Link
+                  to={appRoutes.user.register}
+                  className="text-xs text-indigo-500 underline underline-offset-2 mt-1"
+                >
+                  Join free →
+                </Link>
+              </div>
+              <span className="text-4xl">🎁</span>
+            </div>
+          )}
+
+          {/* Flash sale card */}
+          <div className="bg-amber-100 rounded-xl flex items-center justify-between px-6 py-5">
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-amber-600 font-medium">
+                Flash sale · 4 hrs left
+              </span>
+              <span className="text-lg font-bold text-gray-800">
+                Electronics
+                <br />
+                up to 50% off
+              </span>
+              <Link
+                to="#"
+                className="text-xs text-amber-600 underline underline-offset-2 mt-1"
+              >
+                Shop now →
+              </Link>
+            </div>
+            <span className="text-4xl">⚡</span>
+          </div>
         </div>
       </div>
     </div>
