@@ -171,7 +171,8 @@ const Navbar = () => {
                   ))}
                   <Button key="redir-all" asChild className="rounded-sm">
                     <Link
-                      to={appRoutes.user.search(searchQuery)}
+                      // Change to {appRoutes.user.search(searchQuery)}
+                      to=""
                       className="text-center"
                     >
                       View all results
