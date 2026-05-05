@@ -37,6 +37,6 @@ export default {
       const qs = params.toString();
       return `/products/search${qs ? `?${qs}` : ""}`;
     },
-    addToWishlist: (productId: string) => "/wishlist/addItem",
+    addToWishlist: "/wishlist/addItem",
   },
 };

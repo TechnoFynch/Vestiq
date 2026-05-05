@@ -1,16 +1,15 @@
 import {
   Card,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import type { ProductCardType } from "@/types/ProductCardType";
 
-import { HeartIcon, Star } from "lucide-react";
-import { Badge } from "./badge";
-import { Link } from "react-router";
 import appRoutes from "@/constants/appRoutes";
+import { HeartIcon, Star } from "lucide-react";
+import { Link } from "react-router";
+import { Badge } from "./badge";
 
 interface RatingBarProps {
   avgRating: number;
@@ -78,7 +77,7 @@ const RatingBar = ({
   );
 };
 
-const ProductCardType = (props: ProductCardType) => {
+const ProductCard = (props: ProductCardType) => {
   return (
     <Link to={appRoutes.user.products(props.product_slug)}>
       <Card
@@ -151,4 +150,4 @@ const ProductCardType = (props: ProductCardType) => {
   );
 };
 
-export default ProductCardType;
+export default ProductCard;

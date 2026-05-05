@@ -1,5 +1,4 @@
 import { useAppSelector } from "@/hooks/redux";
-import React from "react";
 import { Navigate, Outlet, useLocation } from "react-router";
 
 const ProtectedRouteGuard = () => {

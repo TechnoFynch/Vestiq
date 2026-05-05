@@ -7,47 +7,50 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import { ArrowRight, StarIcon, SportShoe, ArrowRightIcon } from "lucide-react";
-import React, { useRef } from "react";
-import { Link } from "react-router";
-import { useQuery } from "@tanstack/react-query";
-import { axiosInstance } from "@/services/axiosInstance";
-import apiEndpoints from "@/constants/apiEndpoints";
 import { Spinner } from "@/components/ui/spinner";
+import apiEndpoints from "@/constants/apiEndpoints";
 import { useCarouselBasis } from "@/hooks/useCarouselBasis";
+import { axiosInstance } from "@/services/axiosInstance";
+import { useQuery } from "@tanstack/react-query";
 import {
   AlertCircle,
-  RefreshCw,
-  ShoppingBag, // fallback
-  Watch,
-  Gift,
-  Smartphone,
-  Laptop,
-  House,
-  Sparkles,
+  ArrowRight,
+  ArrowRightIcon,
   Dumbbell,
+  Gift,
+  House,
+  Laptop,
+  RefreshCw,
+  ShoppingBag,
+  Smartphone,
+  Sparkles,
+  SportShoe,
+  StarIcon, // fallback
+  Watch,
 } from "lucide-react";
+import React, { useRef } from "react";
+import { Link } from "react-router";
 
 // react-icons — pi (Phosphor Icons)
 import {
-  PiSneaker,
-  PiHighHeel,
-  PiHandbag,
-  PiBackpack,
-  PiDiamondsFourBold,
-  PiBaseballCapBold,
   PiBabyCarriage,
+  PiBackpack,
+  PiBaseballCapBold,
+  PiDiamondsFourBold,
+  PiHandbag,
+  PiHighHeel,
+  PiSneaker,
 } from "react-icons/pi";
 
 // react-icons — tb (Tabler Icons)
-import { TbShirt, TbJacket } from "react-icons/tb";
+import { TbJacket, TbShirt } from "react-icons/tb";
 
 // react-icons — gi (Game Icons)
-import { GiBootKick, GiDress, GiTrousers, GiBelt } from "react-icons/gi";
-import appRoutes from "@/constants/appRoutes";
-import type { ProductCardType } from "@/types/ProductCardType";
 import ProductCard from "@/components/ui/product-card";
+import appRoutes from "@/constants/appRoutes";
 import { useAppSelector } from "@/hooks/redux";
+import type { ProductCardType } from "@/types/ProductCardType";
+import { GiBelt, GiBootKick, GiDress, GiTrousers } from "react-icons/gi";
 
 const HeroSection = () => {
   return (
@@ -287,7 +290,7 @@ const CategoryScroller = () => {
 const Home = () => {
   const user = useAppSelector((state) => state.auth.name);
 
-  const { data, isLoading, isError, error } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["products"],
     queryFn: () =>
       axiosInstance.get(

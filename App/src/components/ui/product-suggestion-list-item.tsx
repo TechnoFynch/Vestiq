@@ -8,13 +8,12 @@ import {
 import appRoutes from "@/constants/appRoutes";
 import type { ProductSuggestion } from "@/types/ProductSuggestion";
 import { StarIcon } from "lucide-react";
-import React from "react";
 import { Link } from "react-router";
 
 const ProductSuggestionListItem = (props: ProductSuggestion) => {
   return (
     <Item variant="outline" asChild role="listitem">
-      <Link to={appRoutes.user.product(props.slug)}>
+      <Link to={appRoutes.user.products(props.slug)}>
         <ItemMedia variant="image">
           <img src={props.thumb} alt={props.name} width={32} height={32} />
         </ItemMedia>

@@ -8,7 +8,7 @@ const getItemCount = (width: number) => {
   return 5; // xl — 5 cards
 };
 
-export const useCarouselBasis = (containerRef: { current: Element }) => {
+export const useCarouselBasis = (containerRef: { current: Element | null }) => {
   const [basis, setBasis] = useState("33.33%");
 
   useEffect(() => {

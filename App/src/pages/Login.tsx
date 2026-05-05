@@ -7,21 +7,21 @@ import {
   FieldSet,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, EyeOff, Link2Icon } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-import React, { useState } from "react";
-import { useForm, type SubmitHandler } from "react-hook-form";
-import { Link, useNavigate } from "react-router";
-import zod from "zod";
+import apiEndpoints from "@/constants/apiEndpoints";
+import appRoutes from "@/constants/appRoutes";
+import { setToken } from "@/features/slices/authSlice";
+import { useAppDispatch } from "@/hooks/redux";
+import { axiosInstance } from "@/services/axiosInstance";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import type { AxiosError } from "axios";
-import { axiosInstance } from "@/services/axiosInstance";
-import apiEndpoints from "@/constants/apiEndpoints";
+import { Eye, EyeOff, Link2Icon } from "lucide-react";
+import { useState } from "react";
+import { useForm, type SubmitHandler } from "react-hook-form";
+import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
-import { useAppDispatch } from "@/hooks/redux";
-import { setToken } from "@/features/slices/authSlice";
-import appRoutes from "@/constants/appRoutes";
+import zod from "zod";
 
 type LoginInputs = {
   email: string;
@@ -44,8 +44,6 @@ const Login = () => {
   const {
     register,
     handleSubmit,
-    watch,
-    control,
     resetField,
     formState: { errors },
   } = useForm<LoginInputs>({
@@ -55,7 +53,7 @@ const Login = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
-  const { mutate, isPending, isError, error } = useMutation({
+  const { mutate, isError, error } = useMutation({
     mutationFn: async (data: LoginInputs) => {
       try {
         const r = await axiosInstance.post(apiEndpoints.login, {
@@ -81,7 +79,7 @@ const Login = () => {
       toast.success(`Welcome back ${responseData.user.name}!`);
       navigate(appRoutes.user.home);
     },
-    onError: (err: AxiosError<{ message: string }>) => {
+    onError: () => {
       resetField("password");
     },
   });

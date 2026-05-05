@@ -1,8 +1,5 @@
-import { useState } from "react";
-import { Link, Navigate, useNavigate } from "react-router";
-import { useForm, type SubmitHandler, Controller } from "react-hook-form";
-import zod from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Field,
   FieldDescription,
@@ -11,17 +8,20 @@ import {
   FieldSet,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Eye, EyeOff, Link2Icon } from "lucide-react";
-import { useMutation } from "@tanstack/react-query";
-import { axiosInstance } from "@/services/axiosInstance";
-import { toast } from "sonner";
-import type { AxiosError } from "axios";
 import { Spinner } from "@/components/ui/spinner";
 import apiEndpoints from "@/constants/apiEndpoints";
 import appRoutes from "@/constants/appRoutes";
+import { axiosInstance } from "@/services/axiosInstance";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "@tanstack/react-query";
+import type { AxiosError } from "axios";
+import { Eye, EyeOff, Link2Icon } from "lucide-react";
+import { useState } from "react";
+import { Controller, useForm, type SubmitHandler } from "react-hook-form";
+import { Link, useNavigate } from "react-router";
+import { toast } from "sonner";
+import zod from "zod";
 
 type RegisterInputs = {
   firstName: string;
@@ -78,7 +78,7 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
-  const { mutate, isPending, isIdle, isError, error } = useMutation({
+  const { mutate, isPending, isError, error } = useMutation({
     mutationFn: (data: RegisterInputs) =>
       axiosInstance
         .post(apiEndpoints.register, {
@@ -93,7 +93,7 @@ const Register = () => {
           },
         })
         .then((r) => r.data),
-    onSuccess: (responseData) => {
+    onSuccess: () => {
       toast.success("Account created Succesfully!");
       navigate(appRoutes.user.login);
     },

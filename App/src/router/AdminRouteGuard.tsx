@@ -1,5 +1,4 @@
 import { useAppSelector } from "@/hooks/redux";
-import React from "react";
 import { Navigate, Outlet } from "react-router";
 
 const AdminRouteGuard = () => {

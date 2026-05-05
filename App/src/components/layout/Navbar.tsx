@@ -11,12 +11,23 @@ import {
   InputGroupAddon,
   InputGroupInput,
 } from "@/components/ui/input-group";
+import { ItemGroup } from "@/components/ui/item";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import ProductSuggestionListItem from "@/components/ui/product-suggestion-list-item";
+import { Spinner } from "@/components/ui/spinner";
+import apiEndpoints from "@/constants/apiEndpoints";
+import appRoutes from "@/constants/appRoutes";
+import { removeToken } from "@/features/slices/authSlice";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
+import { useCart } from "@/hooks/useCart";
+import useDebounce from "@/hooks/useDebounce";
+import { axiosInstance } from "@/services/axiosInstance";
+import type { ProductSuggestion } from "@/types/ProductSuggestion";
+import { useQuery } from "@tanstack/react-query";
 import {
   ChevronDownIcon,
   HeartIcon,
@@ -27,18 +38,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { removeToken } from "@/features/slices/authSlice";
 import { toast } from "sonner";
-import { useCart } from "@/hooks/useCart";
-import appRoutes from "@/constants/appRoutes";
-import useDebounce from "@/hooks/useDebounce";
-import { useQuery } from "@tanstack/react-query";
-import { axiosInstance } from "@/services/axiosInstance";
-import apiEndpoints from "@/constants/apiEndpoints";
-import { Spinner } from "@/components/ui/spinner";
-import { Item, ItemGroup } from "@/components/ui/item";
-import ProductSuggestionListItem from "@/components/ui/product-suggestion-list-item";
-import type { ProductSuggestion } from "@/types/ProductSuggestion";
 
 function CartBadge({ count }: { count: number }) {
   const [animClass, setAnimClass] = useState("");
@@ -308,10 +308,8 @@ const Navbar = () => {
                     />
                   ))}
                   <Button key="redir-all" asChild className="rounded-sm">
-                    <Link
-                      to={appRoutes.user.search(searchQuery)}
-                      className="text-center"
-                    >
+                    {/* Change to appRoutes.user.search */}
+                    <Link to="" className="text-center">
                       View all results
                     </Link>
                   </Button>
