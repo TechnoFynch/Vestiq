@@ -16,9 +16,12 @@ import { OrderModule } from './order/order.module';
 import { ProductRatingModule } from './product-rating/product-rating.module';
 import { BrandModule } from './brand/brand.module';
 import { WishlistModule } from './wishlist/wishlist.module';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 @Module({
   imports: [
+    ThrottlerModule.forRoot([{ ttl: 60000, limit: 30 }]),
+
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: process.env.NODE_ENV === 'production' ? '.env' : '.env.dev',
@@ -36,13 +39,14 @@ import { WishlistModule } from './wishlist/wishlist.module';
         DB_PASSWORD: Joi.string().allow('').required(),
         DB_NAME: Joi.string().required(),
 
-        SYNCHRONIZE: Joi.boolean().default(false),
+        DB_SYNC: Joi.boolean().default(false),
 
         JWT_SECRET: Joi.string().required(),
         JWT_EXPIRY: Joi.string().required(),
         CLOUDINARY_APIKEY: Joi.string().required(),
         CLOUDINARY_SECRET: Joi.string().required(),
         CLOUDINARY_CLOUD_NAME: Joi.string().required(),
+        CORS_ORIGIN: Joi.string().required(),
       }),
     }),
 
@@ -58,7 +62,10 @@ import { WishlistModule } from './wishlist/wishlist.module';
           username: db.username,
           password: db.password,
           database: db.database,
-
+          ssl:
+            process.env.NODE_ENV === 'production'
+              ? { rejectUnauthorized: false }
+              : false,
           entities: [join(__dirname, '**/*.entity{.ts,.js}')],
           synchronize: config.get<boolean>('synchronize'),
         };

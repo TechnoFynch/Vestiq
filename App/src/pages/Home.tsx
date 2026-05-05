@@ -369,7 +369,7 @@ const Home = () => {
           <div className="bg-amber-100 rounded-xl flex items-center justify-between px-6 py-5">
             <div className="flex flex-col gap-1">
               <span className="text-xs text-amber-600 font-medium">
-                Flash sale · 4 hrs left
+                Flash sale
               </span>
               <span className="text-lg font-bold text-gray-800">
                 Electronics

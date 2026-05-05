@@ -3,6 +3,8 @@ import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { logger } from './config/logger.config';
 import { ValidationPipe } from '@nestjs/common';
+import helmet from 'helmet';
+import { HttpExceptionFilter } from './filters/http-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { logger });
@@ -22,8 +24,10 @@ async function bootstrap() {
     ) // for JWT later
     .build();
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('/api/docs', app, document);
+  if (process.env.NODE_ENV !== 'production') {
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('/api/docs', app, document);
+  }
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -34,8 +38,14 @@ async function bootstrap() {
   );
 
   app.enableCors({
-    origin: 'http://localhost:5173',
+    origin: process.env.CORS_ORIGIN,
+    credentials: true,
   });
+
+  app.use(helmet());
+  app.useGlobalFilters(new HttpExceptionFilter());
+
+  app.enableShutdownHooks();
 
   await app.listen(process.env.PORT ?? 3000);
 }
