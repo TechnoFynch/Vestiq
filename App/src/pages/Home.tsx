@@ -333,13 +333,15 @@ const Home = () => {
           </Button>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 px-8 md:px-2">
+          {/* TODO: CHange this */}
           {isLoading ? (
             <Spinner />
-          ) : (
-            data &&
+          ) : data ? (
             data.data.products.map((product: ProductCardType) => (
               <ProductCard {...product} key={product.product_id} />
             ))
+          ) : (
+            "No results found"
           )}
         </div>
       </div>
