@@ -290,7 +290,7 @@ const CategoryScroller = () => {
 const Home = () => {
   const user = useAppSelector((state) => state.auth.name);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ["products"],
     queryFn: () =>
       axiosInstance.get(
@@ -333,10 +333,11 @@ const Home = () => {
           </Button>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 px-8 md:px-2">
-          {/* TODO: CHange this */}
           {isLoading ? (
             <Spinner />
-          ) : data ? (
+          ) : isError ? (
+            <p>Something went wrong.</p>
+          ) : data?.data?.products?.length ? (
             data.data.products.map((product: ProductCardType) => (
               <ProductCard {...product} key={product.product_id} />
             ))
