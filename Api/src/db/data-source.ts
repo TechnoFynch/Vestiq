@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 import { config } from 'dotenv';
 import { register } from 'tsconfig-paths';
-import { resolve } from 'path';
+import { resolve, join } from 'path';
 
 // Register src/ path alias for TypeORM CLI
 register({
@@ -14,13 +14,9 @@ config({ path: process.env.NODE_ENV === 'production' ? '.env' : '.env.dev' });
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
-  host: process.env.DB_HOST,
-  port: Number(process.env.DB_PORT),
-  username: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
+  url: process.env.DB_URL,
   entities: [__dirname + '/../**/*.entity.{ts,js}'],
-  migrations: [__dirname + '/migrations/*.{ts,js}'],
+  migrations: [join(process.cwd(), 'src/db/migrations/*{.ts,.js}')],
   synchronize: false,
   logging: false,
 });

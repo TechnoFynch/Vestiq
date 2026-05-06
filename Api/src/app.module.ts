@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import configuration from './config/configuration';
-import type { dbType } from './config/configuration';
 import * as Joi from 'joi';
 import { join } from 'path';
 import { AuthModule } from './auth/auth.module';
@@ -17,6 +16,8 @@ import { ProductRatingModule } from './product-rating/product-rating.module';
 import { BrandModule } from './brand/brand.module';
 import { WishlistModule } from './wishlist/wishlist.module';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 
 @Module({
   imports: [
@@ -33,11 +34,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 
         PORT: Joi.number().default(3000),
 
-        DB_HOST: Joi.string().required(),
-        DB_PORT: Joi.number().default(5432),
-        DB_USER: Joi.string().required(),
-        DB_PASSWORD: Joi.string().allow('').required(),
-        DB_NAME: Joi.string().required(),
+        DB_URL: Joi.string().required(),
 
         DB_SYNC: Joi.boolean().default(false),
 
@@ -53,15 +50,9 @@ import { ThrottlerModule } from '@nestjs/throttler';
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
-        const db: dbType = config.get('db') as dbType;
-
         return {
           type: 'postgres',
-          host: db.host,
-          port: db.port,
-          username: db.username,
-          password: db.password,
-          database: db.database,
+          url: config.get<string>('db_url'),
           ssl:
             process.env.NODE_ENV === 'production'
               ? { rejectUnauthorized: false }
@@ -94,5 +85,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 
     WishlistModule,
   ],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}
