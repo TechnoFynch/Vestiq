@@ -9,6 +9,7 @@ import store, { persistor } from "./features/store";
 import { Toaster } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import ResourceWarningDialog from "./utils/resource-warning";
 
 const queryClient = new QueryClient();
 
@@ -19,6 +20,7 @@ createRoot(document.getElementById("root")!).render(
         <QueryClientProvider client={queryClient}>
           <Toaster position="top-right" theme="dark" className="top-18!" />
           <RouterProvider router={router} />
+          <ResourceWarningDialog />
           <ReactQueryDevtools initialIsOpen={false} />
         </QueryClientProvider>
       </PersistGate>

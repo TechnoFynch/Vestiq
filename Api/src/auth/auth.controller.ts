@@ -15,10 +15,14 @@ import { UpdateAuthDto } from './dto/update-auth.dto';
 import { CreateUserProfileDto } from 'src/user_profile/dto/create-user_profile.dto';
 import { ApiBody } from '@nestjs/swagger';
 import { RegisterWrapperDto } from 'src/documentation/register-wrapper.swagger.dto';
+import { ConfigService } from '@nestjs/config';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+  ) {}
 
   @Post('register')
   @ApiBody({ type: RegisterWrapperDto })
@@ -26,6 +30,11 @@ export class AuthController {
     @Body('user') createAuthDto: CreateAuthDto,
     @Body('user_profile') createUserProfileDto: CreateUserProfileDto,
   ) {
+    if (this.configService.get<string>('nodeEnv') === 'production')
+      return {
+        success: false,
+        message: 'Sorry, your request could not be completed',
+      };
     return this.authService.create(createAuthDto, createUserProfileDto);
   }
 
