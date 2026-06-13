@@ -92,7 +92,7 @@ export class ProductService {
         .leftJoin(
           `(${ratingSubquery})`,
           'rating',
-          'rating."product_id" = product.id',
+          'rating."product_id" = product.id', // ← snake_case to match subquery alias
         );
 
       if (validatedUserId) {
@@ -233,7 +233,7 @@ export class ProductService {
         .leftJoin(
           '(' + ratingSubquery.getQuery() + ')',
           'rating',
-          'rating."productId" = product.id',
+          'rating."product_id" = product.id',
         )
         .select([
           'product.id',
