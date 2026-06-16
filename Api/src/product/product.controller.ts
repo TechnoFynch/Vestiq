@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query, Req, UseGuards } from '@nestjs/common';
 import { SearchQueryDto, SortBy, SortType } from './dto/search-query.dto';
 import { SuggestQueryPipe } from './pipes/suggest-query-validator.pipe';
 import { ProductService } from './product.service';
@@ -30,5 +30,12 @@ export class ProductController {
   @Get('/suggest')
   suggestProducts(@Query('query', SuggestQueryPipe) query: string) {
     return this.productService.suggestProducts(query);
+  }
+
+  @Get(':id')
+  @UseGuards(OptionalAuthGuard)
+  findOneById(@Param('id') id: string, @Req() req: any) {
+    const userId = req.user?.userId;
+    return this.productService.findById(id, userId);
   }
 }

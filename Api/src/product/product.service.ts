@@ -293,24 +293,56 @@ export class ProductService {
     }
   }
 
-  async findById(id: string) {
+  async findById(id: string, userId?: string) {
     try {
-      const product = await this.productRepo.findOne({
-        where: { id },
-        relations: ['category', 'inventory', 'images', 'product_rating'],
-      });
+      const queryBuilder = this.productRepo
+        .createQueryBuilder('product')
+        .leftJoin('product.images', 'images')
+        .addSelect(['images.url', 'images.is_primary'])
+        .leftJoinAndSelect('product.category', 'category')
+        .leftJoinAndSelect('product.inventory', 'inventory')
+        .leftJoinAndSelect('product.product_rating', 'rating')
+        .where('product.id = :productId', { productId: id });
 
-      if (!product) {
-        throw new NotFoundException(`Product with ID ${id} not found`);
+      if (userId) {
+        queryBuilder
+          .addSelect((subQuery) => {
+            return subQuery
+              .select('1')
+              .from('wishlist', 'w')
+              .where('w.product_id = :id', { id })
+              .andWhere('w.user_id = :userId');
+          }, 'isWishlisted')
+          .addSelect((subQuery) => {
+            return subQuery
+              .select('1')
+              .from('cart_item', 'ci')
+              .innerJoin('cart', 'cart', 'cart.id = ci.cart_id')
+              .where('ci.product_id = :id', { id })
+              .andWhere('cart.user_id = :userId');
+          }, 'isInCart')
+          .setParameter('userId', userId);
       }
 
-      return product;
+      const { entities, raw } = await queryBuilder.getRawAndEntities();
+      const product = entities[0];
+
+      if (!product) {
+        throw new NotFoundException('Product not found');
+      }
+
+      return {
+        ...product,
+        isWishlisted: userId ? !!raw[0]?.isWishlisted : false,
+        isInCart: userId ? !!raw[0]?.isInCart : false,
+      };
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;
       }
 
-      this.logger.error(`Error fetching product with ID ${id}:`, error);
+      this.logger.error(`Error fetching product with ID ${id}:`);
+      console.log(error);
       throw new InternalServerErrorException('Failed to fetch product');
     }
   }
